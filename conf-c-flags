@@ -1,0 +1,17 @@
+-Os
+-std=gnu2x
+-Wall
+-Werror
+-Wextra
+-Wno-error=unused-const-variable
+-Wno-error=unused-parameter
+-Wno-unused-parameter
+-Wpedantic
+-fno-builtin
+-fno-common
+-fno-exceptions
+-fno-non-call-exceptions
+-g
+-pedantic
+-mmcu=atmega328p
+-I/usr/avr/include

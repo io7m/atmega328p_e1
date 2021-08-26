@@ -1,0 +1,22 @@
+#!/bin/sh -ex
+
+fatal()
+{
+  echo "fatal: $1" 1>&2
+  exit 1
+}
+
+#
+# The low fuse byte consists of these values OR'd together:
+#
+# 0b1000000 : Disable clock division by 8 (CKDIV8)
+# 0b0110001 : Specify the maximum 65ms clock startup time (SUT1, SUT0, CKSEL0)
+# 0b0001110 : Specify that the external clock is 8mhz - 16mhz (CKSEL3:1)
+#
+
+exec avrdude \
+  -p atmega328p \
+  -c usbtiny \
+  -v \
+  -U lfuse:w:0xff:m
+

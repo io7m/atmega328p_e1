@@ -1,0 +1,17 @@
+#!/bin/sh
+
+fatal()
+{
+  echo "fatal: $1" 1>&2
+  exit 1
+}
+
+if [ $# -ne 1 ]
+then
+  fatal "usage: executable"
+fi
+
+EXECUTABLE="$1"
+shift
+
+exec avr-size -C --mcu=atmega328p "${EXECUTABLE}"

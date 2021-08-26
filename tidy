@@ -1,0 +1,2 @@
+#!/bin/sh
+exec clang-tidy -checks='*,-llvmlibc-*,-modernize-use-trailing-return-type'  $@ -- -std=c++14 -Iinclude -x c++

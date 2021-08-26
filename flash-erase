@@ -1,0 +1,9 @@
+#!/bin/sh -ex
+
+fatal()
+{
+  echo "fatal: $1" 1>&2
+  exit 1
+}
+
+exec avrdude -c usbtiny -p ATmega328P -e
