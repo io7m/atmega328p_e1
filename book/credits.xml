@@ -1,0 +1,57 @@
+<Section xmlns="urn:com.io7m.structural:8:0"
+         title="Attributions">
+
+  <Paragraph>
+    This book contains images of many of the tables in the
+    <LinkExternal target="https://www.microchip.com/en-us/product/ATMEGA328P">Microchip ATMega328p
+      Datasheet</LinkExternal>. They are reproduced here to ensure that this book remains usable even if the datasheet
+    is withdrawn from circulation.
+  </Paragraph>
+
+  <FormalItem title="Images"
+              id="69a5ce57-5b8f-47a4-80d0-1ea0cfe70a25">
+    <Table type="genericTable">
+      <Columns>
+        <Column>Image</Column>
+        <Column>Source</Column>
+      </Columns>
+      <Row>
+        <Cell>
+          <Link target="67fa7318-3f73-48b5-a1b3-d76601d66a39">ATMega328p</Link>
+        </Cell>
+        <Cell>
+          <LinkExternal target="https://commons.wikimedia.org/wiki/File:ATMEGA328P-PU.jpg">Wikimedia Commons
+          </LinkExternal>
+        </Cell>
+      </Row>
+      <Row>
+        <Cell>
+          <Link target="60d3972e-b872-4859-8912-bc4ef87e1829">AVR 6 pin connector</Link>
+        </Cell>
+        <Cell>
+          <LinkExternal target="https://community.atmel.com/sites/default/files/project_files/ATAVRISP_User_Guide.pdf">
+            AVRISP User Guide
+          </LinkExternal>
+        </Cell>
+      </Row>
+      <Row>
+        <Cell>
+          <Link target="62e82bfb-d8fd-4deb-b3f8-24f892e56f93">AVR 6 pin connector</Link>
+        </Cell>
+        <Cell>
+          <LinkExternal target="https://www.avrfreaks.net/sites/default/files/Atmel%20ISP%20pin-outs.pdf">AVR Freaks
+          </LinkExternal>
+        </Cell>
+      </Row>
+      <Row>
+        <Cell>
+          <Link target="bb2fc655-27fe-49ff-8833-5723d1dba0bf">AVR 10 pin connector</Link>
+        </Cell>
+        <Cell>
+          <LinkExternal target="https://www.avrfreaks.net/sites/default/files/Atmel%20ISP%20pin-outs.pdf">AVR Freaks
+          </LinkExternal>
+        </Cell>
+      </Row>
+    </Table>
+  </FormalItem>
+</Section>

@@ -1,0 +1,15 @@
+build
+.gdbinit
+blink
+blink.hex
+blinkBad
+blinkBad.hex
+blinkBad.txt
+blinkBad2
+blinkBad2.hex
+blinkBetter
+blinkBetter.hex
+blinkUART
+blinkUART.hex
+scope.hex
+usart.dia~

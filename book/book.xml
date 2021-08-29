@@ -1,0 +1,1936 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<Document xmlns:dc="http://purl.org/dc/elements/1.1/"
+          xmlns:xi="http://www.w3.org/2001/XInclude"
+          xmlns="urn:com.io7m.structural:8:0">
+  <Metadata>
+    <dc:identifier>ef5362ed-1b16-4632-92b5-9d2f49526423</dc:identifier>
+    <dc:title>The ATMega328P From (Almost) Nothing</dc:title>
+    <dc:creator>Mark Raynsford</dc:creator>
+    <dc:date>2021-08-28T09:00:00Z</dc:date>
+    <dc:language>en</dc:language>
+    <dc:rights>Public Domain</dc:rights>
+
+    <MetaProperty name="com.io7m.xstructural.epub.cover">bookCover.jpg</MetaProperty>
+    <MetaProperty name="com.io7m.xstructural.epub.colophon">colophon_extra.xml</MetaProperty>
+    <MetaProperty name="com.io7m.xstructural.web.branding.header">brand.xml</MetaProperty>
+    <MetaProperty name="com.io7m.xstructural.web.branding.footer">brand.xml</MetaProperty>
+  </Metadata>
+
+  <Section title="Overview"
+           id="c05f014c-f18c-4aab-b220-8f19eb44c318">
+    <Paragraph>
+      This book describes a process that can be used to configure a factory-fresh <LinkExternal target="https://en.wikipedia.org/wiki/ATmega328">
+      ATMega328p
+    </LinkExternal> IC such that it provides a convenient platform for microcontroller development. The intention is to
+      fully document the process of extracting information from datasheets, configuring components on a breadboard, and
+      writing code in a manner that fosters a real
+      <Term type="term">understanding</Term>
+      of the underlying hardware. The process uses raw, individually-sourced electronics components, and does not use
+      any third-party software outside of the C compiler used to compile code. The C code is written such that
+      convenient platform "helper" header files are eschewed in favour of writing new definitions based on the contents
+      of the hardware datasheets<LinkFootnote target="4d9587ae-c552-4b0d-bab5-c4e5f097b55a"/>.
+    </Paragraph>
+
+    <Paragraph>
+      The reader is expected to be familiar with the following subjects: C programming (although no particular
+      experience in embedded programming is required), and the basics of plugging components into a breadboard.
+    </Paragraph>
+
+    <Footnote id="4d9587ae-c552-4b0d-bab5-c4e5f097b55a">
+      As opposed to simply copying and pasting
+      <LinkExternal target="https://www.arduino.cc/">Arduino</LinkExternal>
+      sketches and hoping for the best.
+    </Footnote>
+  </Section>
+
+  <Section title="Bill Of Materials"
+           id="e376161d-eefd-4933-99aa-c762394a2c7b">
+    <Subsection title="Items">
+      <Paragraph>
+        The following components are required:
+      </Paragraph>
+      <FormalItem title="BOM"
+                  id="d7ff279f-7d1f-42b6-810d-f7f38a13cb13">
+        <Table type="genericTable">
+          <Columns>
+            <Column>Quantity</Column>
+            <Column>Item</Column>
+            <Column>Description</Column>
+          </Columns>
+          <Row>
+            <Cell>1</Cell>
+            <Cell>Microchip ATMega328p</Cell>
+            <Cell>Microcontroller IC.</Cell>
+          </Row>
+          <Row>
+            <Cell>1</Cell>
+            <Cell>USB ISP</Cell>
+            <Cell>In-system programmer with USB connection.</Cell>
+          </Row>
+          <Row>
+            <Cell>1</Cell>
+            <Cell>FTDI LC234X</Cell>
+            <Cell>USB ↔ USART adapter.</Cell>
+          </Row>
+          <Row>
+            <Cell>1</Cell>
+            <Cell>5V Breadboard power supply</Cell>
+            <Cell>Breadboard power supply.</Cell>
+          </Row>
+          <Row>
+            <Cell>2</Cell>
+            <Cell>22 pF ceramic capacitor</Cell>
+            <Cell>Capacitors for clock signals.</Cell>
+          </Row>
+          <Row>
+            <Cell>1</Cell>
+            <Cell>16mhz crystal oscillator</Cell>
+            <Cell>16mhz microcontroller clock.</Cell>
+          </Row>
+          <Row>
+            <Cell>1</Cell>
+            <Cell>20mA LED</Cell>
+            <Cell>Status LED</Cell>
+          </Row>
+          <Row>
+            <Cell>1</Cell>
+            <Cell>220mΩ resistor</Cell>
+            <Cell>Resistor to reduce current for LED</Cell>
+          </Row>
+          <Row>
+            <Cell>10+</Cell>
+            <Cell>Breadboard wires</Cell>
+            <Cell>Required to connect components together.</Cell>
+          </Row>
+        </Table>
+      </FormalItem>
+    </Subsection>
+
+    <Subsection title="Sourcing">
+      <Paragraph>
+        The Microchip ATMega328p is widely available from electronics component stores. Be sure to order the 28 SPDIP
+        package in order to make it easy to insert the chip into a breadboard.
+      </Paragraph>
+      <FormalItem title="ATMega328p Sources"
+                  id="715539aa-b07f-4bb4-b215-c681f9feaf2f">
+        <ListUnordered>
+          <Item>
+            <LinkExternal target="https://uk.farnell.com/microchip/atmega328-pu/mcu-8bit-atmega-20mhz-dip-28/dp/1972087?st=atmega328p">
+              Farnell.com
+            </LinkExternal>
+          </Item>
+          <Item>
+            <LinkExternal target="https://www.digikey.co.uk/en/products/detail/microchip-technology/ATMEGA328P-PU/1914589">
+              Digi-Key
+            </LinkExternal>
+          </Item>
+        </ListUnordered>
+      </FormalItem>
+      <Paragraph>
+        There are many USB ISP programmers available, but the exact model used in this book is the
+        <LinkExternal target="https://www.dfrobot.com/product-405.html">DFRobot USBtinyISP - Arduino Bootloader
+          Programmer</LinkExternal>.
+      </Paragraph>
+      <Paragraph>
+        The FTDI LC234X USB ↔ USART adapter is widely available from electronics components stores. Any USB ↔ USART
+        adapter will be usable and they are largely interchangeable.
+      </Paragraph>
+      <FormalItem title="FTDI LC234X Sources"
+                  id="907ab72d-1c87-481d-9f54-451d87d318d8">
+        <ListUnordered>
+          <Item>
+            <LinkExternal target="https://uk.farnell.com/ftdi/lc234x/eval-brd-usb-to-uart-interface/dp/2753006?ost=ftdi+lc234x">
+              Farnell.com
+            </LinkExternal>
+          </Item>
+          <Item>
+            <LinkExternal target="https://www.digikey.com/reference-designs/en/wired-communication/interface-solutions/2734">
+              Digi-Key
+            </LinkExternal>
+          </Item>
+        </ListUnordered>
+      </FormalItem>
+      <Paragraph>
+        The breadboard power supply can be any power supply that can supply 5V to a breadboard.
+      </Paragraph>
+    </Subsection>
+  </Section>
+
+  <Section title="Datasheets">
+    <Paragraph>
+      The first step required in any electronics project is to obtain datasheets for all of the components. Whenever
+      this book makes references to "<Term type="term">the datasheet</Term>", it is referring to the official datasheet
+      for the ATMega328P. The datasheet is available on the
+      <LinkExternal target="https://www.microchip.com/en-us/product/ATMEGA328P">Microchip</LinkExternal>
+      site. Specifically, this book was written against the <Term type="constant">DS40002061B</Term> datasheet (which
+      contains Microchip branding as opposed to the older Atmel branding).
+    </Paragraph>
+  </Section>
+
+  <Section title="Wiring The Microcontroller">
+    <Subsection title="IC Orientation">
+      <Paragraph>
+        The first step required is to insert the microcontroller onto the breadboard. In the datasheet, on page 12, we
+        find a diagram of the pin configuration for the dual in-line package form of the chip:
+      </Paragraph>
+      <FormalItem title="Pin Diagram"
+                  id="aceaf082-70f9-4e36-bb82-120674524895">
+        <Image source="28dip.png"
+               width="640"
+               height="456">Pin Diagram
+        </Image>
+      </FormalItem>
+      <Paragraph>
+        The chip features a small indentation at one end, and a small dot next to Pin 1. It doesn't matter how we orient
+        the chip in the breadboard as long as we understand where Pin 1 is; if we can locate that pin, we can follow the
+        pins counter-clockwise around the chip to locate any other numbered pin. It's common practice to insert dual
+        in-line package chips across the center divider in a given breadboard, as this allows for the row of pins on one
+        side of the chip to be electrically disconnected from the row on the other side.
+      </Paragraph>
+      <FormalItem title="ATMega328p"
+                  id="67fa7318-3f73-48b5-a1b3-d76601d66a39">
+        <Image source="1280px-ATMEGA328P-PU.jpg"
+               width="640"
+               height="426">ATMega328p
+        </Image>
+      </FormalItem>
+      <FormalItem title="Pin 1"
+                  id="afb3f556-0eaa-4dcc-8224-1508d0010d97">
+        <Image source="boardPin1.jpg"
+               width="640"
+               height="269">Pin 1
+        </Image>
+      </FormalItem>
+    </Subsection>
+
+    <Subsection title="Powering The IC">
+      <Paragraph>
+        On page 13, the datasheet indicates that we need to connect the IC to a voltage source, and also to ground.
+        Specifically, it indicates that the <Term type="pin">Vcc</Term> pin must be connected to a voltage source, and
+        also that the <Term type="pin">AVcc</Term> pin <Term type="quote">"should be externally connected to Vcc, even
+        if the ADC is not used."
+      </Term> The datasheet also indicates that the <Term type="pin">AVcc</Term> pin should be connected to the voltage
+        source via some kind of low-pass filter if the ADC functionality in the microcontroller is going to be used
+        <LinkFootnote target="47fbf14f-ff4f-4e7b-aee7-e903ce9db0d4"/>. Because the circuit in this example will not be
+        making use of an ADC, this pin can be safely connected directly to the voltage source without using a filter.
+      </Paragraph>
+      <FormalItem title="Connections"
+                  id="397c81bf-e8a3-4724-8403-7c938db8ee30">
+        <ListOrdered>
+          <Item>Connect pin 7 to the breadboard 5V rail.</Item>
+          <Item>Connect pin 8 to the breadboard ground rail.</Item>
+          <Item>Connect pin 22 to the breadboard ground rail.</Item>
+          <Item>Connect pin 20 to the breadboard 5V rail.</Item>
+        </ListOrdered>
+      </FormalItem>
+      <FormalItem title="Voltage/Ground"
+                  id="49adbf02-a8e6-4c45-a872-0246e3dd1a6a">
+        <Image source="boardVoltage.jpg"
+               width="640"
+               height="267">Voltage/Ground
+        </Image>
+      </FormalItem>
+    </Subsection>
+
+    <Subsection title="Connecting An Oscillator">
+      <Paragraph id="830759ee-41d6-49e1-adae-a492d2172450">
+        By default, ATMega328p chips are configured to use an internal 8mhz oscillator. The chip is factory configured
+        to divide the ticks of the internal oscillator by 8, yielding a configuration that runs the chip at 1mhz. We,
+        however, want to run the chip at a higher clock speed of 16mhz, and therefore need to connect an external
+        oscillator crystal.
+      </Paragraph>
+      <Paragraph>
+        Page 36 of the datasheet indicates how all of the various system clocks are derived:
+      </Paragraph>
+      <FormalItem title="Tree Of Clocks"
+                  id="9b7c03fa-1791-4e6e-8ff1-0f565d2c4e2c">
+        <Image source="clocks.png"
+               width="640"
+               height="450">Tree Of Clocks
+        </Image>
+      </FormalItem>
+      <Paragraph>
+        Pages 39 and 40 of the datasheet indicate that we can't just connect an oscillator directly to the chip; we must
+        include a pair of capacitors it refers to as <Term type="component">C1</Term> and
+        <Term type="component">C2</Term>. The reason for this, as ever, is noise: If a circuit is very noisy, then small
+        spikes of noise could be misinterpreted as oscillator pulses, yielding a system clock that behaves erratically.
+        The datasheet gives suggested values for ceramic capacitors for a 16mhz clock, and we're using the highest
+        suggested values of <Term type="constant">22pF</Term>. The datasheet indicates that the oscillator should be
+        connected with two capacitors in parallel, and also connected to ground:
+      </Paragraph>
+      <FormalItem title="Oscillator Circuit"
+                  id="436c7537-9522-4d76-ac15-4498863b3cbe">
+        <Image source="oscillator.png"
+               width="640"
+               height="260">Oscillator Circuit
+        </Image>
+      </FormalItem>
+      <Paragraph>
+        Looking back at the <Link target="aceaf082-70f9-4e36-bb82-120674524895">pin diagram</Link>, we can see that the
+        two clock pins, <Term type="pin">XTAL1</Term> and <Term type="pin">XTAL2</Term>, are on pins 9 and 10,
+        respectively. Neither the crystal oscillator or the ceramic capacitors are
+        <Term type="term">polarized</Term>
+        components, so don't be concerned about inserting them the wrong way round; they can be inserted in any
+        orientation.
+      </Paragraph>
+      <FormalItem title="Connections"
+                  id="bf746beb-3e8d-4b5b-9031-4486c41e85aa">
+        <ListOrdered>
+          <Item>Connect the two pins of the crystal oscillator to pins 9 and 10.</Item>
+          <Item>Connect C1 to pin 9 and to the breadboard ground rail.</Item>
+          <Item>Connect C2 to pin 10 and to the breadboard ground rail.</Item>
+        </ListOrdered>
+      </FormalItem>
+      <FormalItem title="Oscillator Connected"
+                  id="4dc6875a-b002-4646-8430-991bb38bec8a">
+        <Image source="boardOsc.jpg"
+               width="640"
+               height="412">Oscillator Connected
+        </Image>
+      </FormalItem>
+    </Subsection>
+
+    <Subsection title="Next Steps"
+                id="a956330b-9444-440c-8abc-7f393f3e5ca0">
+      <Paragraph>
+        At this point, it might be surprising to learn that this is actually all that's required to run the chip. If we
+        were to supply voltage at this point, the microcontroller would power up and would begin executing code. The
+        problem, obviously, is that the microcontroller doesn't contain any code. The next step, therefore, is to set up
+        the programmer required to actually get code onto the chip.
+      </Paragraph>
+    </Subsection>
+
+    <Footnote id="47fbf14f-ff4f-4e7b-aee7-e903ce9db0d4">
+      A low-pass filter is required in order to reduce any noise that may be introduced into the circuit from the
+      voltage source.
+    </Footnote>
+  </Section>
+
+  <Section title="Flashing The Microcontroller">
+    <Subsection title="USB ISPs">
+      <Paragraph>
+        By default, ATMega328p chips contain no code. It's therefore required to use some sort of hardware tool to
+        actually get code onto the chip. The ATMega328p contains 32KBytes of programmable <Term type="term">flash
+        memory</Term>, and it's this flash memory that will contain the code we want to execute. According to the
+        datasheet, there are multiple methods that can be used to write to the flash memory. However, because we're
+        trying to put together a system upon which we can experiment and develop, we in particular don't want to have to
+        use something where we have to continuously unplug and replug the chip into some kind of external programmer
+        tool every time we want to try a new version of the code we're writing. We, ideally, want something we can leave
+        plugged in on the breadboard, if possible. We also don't want to have to use a system that consumes all of the
+        pins on the microcontroller; if we're going to leave whatever device we end up using plugged in, then we need to
+        have at least some pins left over for our own applications! Additionally, we don't want to have to use any kind
+        of proprietary software to program the chip. The ideal solution for our needs is to have some kind of device
+        where one end of the device is plugged into an ordinary workstation, and the other end is connected to the
+        breadboard, and we can execute a simple command-line tool to upload code to the microcontroller.
+      </Paragraph>
+      <Paragraph>
+        In the datasheet, on page 303 in the "Memory Programming" chapter, we find the following paragraph:
+      </Paragraph>
+      <Paragraph type="quote"
+                 id="47aef239-a895-46c9-8e1a-f0298ee9390e">
+        "Both the Flash and EEPROM memory arrays can be programmed using the serial SPI bus while RESET is pulled to
+        GND. The serial interface consists of pins SCK, MOSI (input) and MISO (output). After RESET is set low, the
+        Programming Enable instruction needs to be executed first before program/erase operations can be executed."
+      </Paragraph>
+      <Paragraph>
+        In other words, if we can connect together some sort of device that is capable of setting the microcontroller's
+        <Term type="pin">RESET</Term>
+        pin low, and then sending a series of programming commands over the wire using the
+        <LinkExternal target="https://en.wikipedia.org/wiki/Serial_Peripheral_Interface">Serial Peripheral Interface
+        </LinkExternal>
+        protocol, then this will be sufficient to get code onto the chip. This would appear to be the best choice for
+        our needs as the SPI protocol only requires three pins to function.
+      </Paragraph>
+      <Paragraph>
+        The device we need is a USB <Term type="term">in-system programmer</Term> (ISP). There are numerous inexpensive
+        USB ISPs available as they're trivial to manufacture and numerous open source
+        <LinkExternal target="https://github.com/aleh/usbisp">firmware</LinkExternal>
+        distributions exist. Some people choose to use an existing <LinkExternal target="https://www.arduino.cc/en/pmwiki.php?n=Tutorial/ArduinoISP">
+        Arduino
+      </LinkExternal> board to act as an ISP. Alternatively, there are
+        <LinkExternal target="https://www.adafruit.com/product/46">DIY kits</LinkExternal>
+        available to self-build an ISP programmer. There are also
+        <LinkExternal target="https://www.dfrobot.com/product-405.html">pre-assembled devices</LinkExternal>
+        available. For this book, the assumption is that the reader will be using the
+        <Term type="term">USBtinyISP</Term>
+        programmer. The instructions differ only slightly for different programmers, and attempts are made to indicate
+        where this may occur.
+      </Paragraph>
+    </Subsection>
+
+    <Subsection title="Connecting The ISP">
+      <Paragraph>
+        As mentioned <Link target="47aef239-a895-46c9-8e1a-f0298ee9390e">earlier</Link>, we need to locate the correct
+        pins on the microcontroller to which to connect the pins on the USB ISP. Typically, if one was using an existing
+        manufactured development board, there would be a six-pin connector already connected to the board, with the pins
+        already wired to the correct pins on the microcontroller. Such a connector might look like this:
+      </Paragraph>
+      <FormalItem title="6 Pin ISP Connector"
+                  id="2bf1de83-dcdb-4222-9038-f1c26ef2cb97">
+        <Image source="6pin.jpg"
+               width="640"
+               height="433">6 Pin ISP Connector
+        </Image>
+      </FormalItem>
+      <Paragraph>
+        This kind of connector is typically attached to a ribbon cable that may have been supplied with the ISP. The
+        arrangement of the pins in the connector is specified in the
+        <LinkExternal target="https://community.atmel.com/sites/default/files/project_files/ATAVRISP_User_Guide.pdf">
+          AVRISP User Guide</LinkExternal>, and all ISP programmers tend to be compatible with this. The pins on the
+        connector are described in the following diagram taken from the guide:
+      </Paragraph>
+      <FormalItem title="6 Pin Connections"
+                  id="60d3972e-b872-4859-8912-bc4ef87e1829">
+        <Image source="6pin_diag.png"
+               width="640"
+               height="464">6 Pin Connections
+        </Image>
+      </FormalItem>
+      <Paragraph>
+        One needlessly frustrating aspect of this diagram is that although the pins are numbered, the diagram gives no
+        indication as to the orientation of the connector. A pair of diagrams taken from
+        <LinkExternal target="https://www.avrfreaks.net/sites/default/files/Atmel%20ISP%20pin-outs.pdf">avrfreaks
+        </LinkExternal>
+        indicates that pin 3 is closest to the open side of the connector:
+      </Paragraph>
+      <FormalItem title="6 Pin Connections (Alternative View)"
+                  id="62e82bfb-d8fd-4deb-b3f8-24f892e56f93">
+        <Image source="6pin_alt.png">6 Pin Connections (Alternative View)</Image>
+      </FormalItem>
+      <FormalItem title="10 Pin Connections (Alternative View)"
+                  id="bb2fc655-27fe-49ff-8833-5723d1dba0bf">
+        <Image source="10pin_alt.png">10 Pin Connections (Alternative View)</Image>
+      </FormalItem>
+      <FormalItem title="USB ISP Pins"
+                  id="ac11a2b5-dda4-4c22-8375-bb136c0ca889">
+        <Image source="boardISP.jpg"
+               width="640"
+               height="449">USB ISP Pins
+        </Image>
+      </FormalItem>
+      <Paragraph>
+        We need to connect the <Term type="pin">MOSI</Term>, <Term type="pin">MISO</Term>, <Term type="pin">SCK</Term>,
+        and <Term type="pin">RESET</Term> pins on the ISP to the corresponding pins on the microcontroller. We do not
+        need to connect the <Term type="pin">Vcc</Term> or <Term type="pin">GND</Term> pins as we will be relying on a
+        breadboard power supply to power the entire board. As such, this would also be a good time to connect a power
+        supply to the breadboard.
+      </Paragraph>
+      <Paragraph>
+        Looking back at the <Link target="aceaf082-70f9-4e36-bb82-120674524895">pin diagram</Link> for the
+        microcontroller, we can easily find the <Term type="pin">MOSI</Term>, <Term type="pin">MISO</Term>,
+        <Term type="pin">SCK</Term>, and <Term type="pin">RESET</Term> pins.
+      </Paragraph>
+      <FormalItem title="Connections"
+                  id="66bd8ff8-608b-4512-91c0-df9ac0512a22">
+        <ListOrdered>
+          <Item>Connect the breadboard power supply to the breadboard.</Item>
+          <Item>Connect the MOSI pin of the ISP to pin 17 on the microcontroller.</Item>
+          <Item>Connect the MISO pin of the ISP to pin 18 on the microcontroller.</Item>
+          <Item>Connect the SCK pin of the ISP to pin 19 on the microcontroller.</Item>
+          <Item>Connect the RESET pin of the ISP to pin 1 on the microcontroller.</Item>
+        </ListOrdered>
+      </FormalItem>
+      <FormalItem title="Breadboard Power And ISP (1)"
+                  id="cb354c9a-0b70-4ce2-b458-d7fcd1e83baa">
+        <Image source="boardISPOuter.jpg"
+               width="640"
+               height="390">Breadboard Power And ISP (1)
+        </Image>
+      </FormalItem>
+      <FormalItem title="Breadboard Power And ISP (2)"
+                  id="020d9abd-46de-4cf9-9a2d-f165df31d76d">
+        <Image source="boardISPInner.jpg"
+               width="640"
+               height="717">Breadboard Power And ISP (2)
+        </Image>
+      </FormalItem>
+    </Subsection>
+
+    <Subsection title="AVRDude"
+                id="aaa10cb1-4e56-4391-80f5-1620e0139101">
+      <Paragraph>
+        All AVR microcontrollers have so-called <Term type="term">fuse bits</Term> that can be programmed using an ISP.
+        The fuse bits are essentially software configuration bits that can be used to control, for example, whether the
+        chip will use an internal or external oscillator, or whether EEPROM values will be preserved across a chip erase
+        operation, or a large number of other configuration values. Fuse bits are stored in some kind of non-volatile
+        memory inside the controller, and the values set will survive indefinitely without a power supply. A good test
+        to determine whether we've wired up the chip correctly is to use an open-source command-line tool to attempt to
+        read the current values of the fuse bits using the ISP.
+      </Paragraph>
+      <Paragraph>
+        The command-line tool we'll be using is
+        <LinkExternal target="https://www.nongnu.org/avrdude/">avrdude</LinkExternal>
+        <LinkFootnote target="b9a08c27-faed-4e8d-8612-026e298e000d"/>. Most Linux distributions and the BSDs come with
+        precompiled packages of <Term type="package">avrdude</Term>, so install it using whatever mechanism is
+        appropriate for your system. The <Term type="package">avrdude</Term> tool knows how to send all of the commands
+        necessary to program an AVR microcontroller using a wide range of different programmers. The <Term type="package">
+        avrdude
+      </Term> refers to the <Term type="term">USBtinyISP</Term> programmer we're using as <Term type="package">
+        usbtiny</Term>, but you might find whatever programmer you're using on the list of programmers that can be
+        viewed by executing <Term type="expression">avrdude -c ?</Term>:
+      </Paragraph>
+      <FormalItem title="Supported Programmers"
+                  id="355df991-c02f-4f51-b51d-abe4f8247c6e">
+        <Verbatim><![CDATA[
+$ avrdude -c ?
+
+Valid programmers are:
+  2232HIO          = FT2232H based generic programmer
+  4232h            = FT4232H based generic programmer
+  89isp            = Atmel at89isp cable
+  abcmini          = ABCmini Board, aka Dick Smith HOTCHIP
+  alf              = Nightshade ALF-PgmAVR, http://nightshade.homeip.net/
+  arduino          = Arduino
+  arduino-ft232r   = Arduino: FT232R connected to ISP
+  atisp            = AT-ISP V1.1 programming cable for AVR-SDK1 from <http://micro-research.co.th/>
+  atmelice         = Atmel-ICE (ARM/AVR) in JTAG mode
+  atmelice_dw      = Atmel-ICE (ARM/AVR) in debugWIRE mode
+  atmelice_isp     = Atmel-ICE (ARM/AVR) in ISP mode
+  atmelice_pdi     = Atmel-ICE (ARM/AVR) in PDI mode
+  avr109           = Atmel AppNote AVR109 Boot Loader
+  avr910           = Atmel Low Cost Serial Programmer
+  avr911           = Atmel AppNote AVR911 AVROSP
+  avrftdi          = FT2232D based generic programmer
+  avrisp           = Atmel AVR ISP
+  avrisp2          = Atmel AVR ISP mkII
+  avrispmkII       = Atmel AVR ISP mkII
+  avrispv2         = Atmel AVR ISP V2
+  bascom           = Bascom SAMPLE programming cable
+  blaster          = Altera ByteBlaster
+  bsd              = Brian Dean's Programmer, http://www.bsdhome.com/avrdude/
+  buspirate        = The Bus Pirate
+  buspirate_bb     = The Bus Pirate (bitbang interface, supports TPI)
+  butterfly        = Atmel Butterfly Development Board
+  butterfly_mk     = Mikrokopter.de Butterfly
+  bwmega           = BitWizard ftdi_atmega builtin programmer
+  C232HM           = FT232H based module from FTDI and Glyn.com.au
+  c2n232i          = serial port banging, reset=dtr sck=!rts mosi=!txd miso=!cts
+  dapa             = Direct AVR Parallel Access cable
+  dasa             = serial port banging, reset=rts sck=dtr mosi=txd miso=cts
+  dasa3            = serial port banging, reset=!dtr sck=rts mosi=txd miso=cts
+  diecimila        = alias for arduino-ft232r
+  dragon_dw        = Atmel AVR Dragon in debugWire mode
+  dragon_hvsp      = Atmel AVR Dragon in HVSP mode
+  dragon_isp       = Atmel AVR Dragon in ISP mode
+  dragon_jtag      = Atmel AVR Dragon in JTAG mode
+  dragon_pdi       = Atmel AVR Dragon in PDI mode
+  dragon_pp        = Atmel AVR Dragon in PP mode
+  dt006            = Dontronics DT006
+  ere-isp-avr      = ERE ISP-AVR <http://www.ere.co.th/download/sch050713.pdf>
+  flip1            = FLIP USB DFU protocol version 1 (doc7618)
+  flip2            = FLIP USB DFU protocol version 2 (AVR4023)
+  frank-stk200     = Frank STK200
+  ft232r           = FT232R Synchronous BitBang
+  ft245r           = FT245R Synchronous BitBang
+  futurlec         = Futurlec.com programming cable.
+  jtag1            = Atmel JTAG ICE (mkI)
+  jtag1slow        = Atmel JTAG ICE (mkI)
+  jtag2            = Atmel JTAG ICE mkII
+  jtag2avr32       = Atmel JTAG ICE mkII im AVR32 mode
+  jtag2dw          = Atmel JTAG ICE mkII in debugWire mode
+  jtag2fast        = Atmel JTAG ICE mkII
+  jtag2isp         = Atmel JTAG ICE mkII in ISP mode
+  jtag2pdi         = Atmel JTAG ICE mkII PDI mode
+  jtag2slow        = Atmel JTAG ICE mkII
+  jtag3            = Atmel AVR JTAGICE3 in JTAG mode
+  jtag3dw          = Atmel AVR JTAGICE3 in debugWIRE mode
+  jtag3isp         = Atmel AVR JTAGICE3 in ISP mode
+  jtag3pdi         = Atmel AVR JTAGICE3 in PDI mode
+  jtagkey          = Amontec JTAGKey, JTAGKey-Tiny and JTAGKey2
+  jtagmkI          = Atmel JTAG ICE (mkI)
+  jtagmkII         = Atmel JTAG ICE mkII
+  jtagmkII_avr32   = Atmel JTAG ICE mkII im AVR32 mode
+  lm3s811          = Luminary Micro LM3S811 Eval Board (Rev. A)
+  mib510           = Crossbow MIB510 programming board
+  mkbutterfly      = Mikrokopter.de Butterfly
+  nibobee          = NIBObee
+  o-link           = O-Link, OpenJTAG from www.100ask.net
+  openmoko         = Openmoko debug board (v3)
+  pavr             = Jason Kyle's pAVR Serial Programmer
+  pickit2          = MicroChip's PICkit2 Programmer
+  picoweb          = Picoweb Programming Cable, http://www.picoweb.net/
+  pony-stk200      = Pony Prog STK200
+  ponyser          = design ponyprog serial, reset=!txd sck=rts mosi=dtr miso=cts
+  siprog           = Lancos SI-Prog <http://www.lancos.com/siprogsch.html>
+  sp12             = Steve Bolt's Programmer
+  stk200           = STK200
+  stk500           = Atmel STK500
+  stk500hvsp       = Atmel STK500 V2 in high-voltage serial programming mode
+  stk500pp         = Atmel STK500 V2 in parallel programming mode
+  stk500v1         = Atmel STK500 Version 1.x firmware
+  stk500v2         = Atmel STK500 Version 2.x firmware
+  stk600           = Atmel STK600
+  stk600hvsp       = Atmel STK600 in high-voltage serial programming mode
+  stk600pp         = Atmel STK600 in parallel programming mode
+  ttl232r          = FTDI TTL232R-5V with ICSP adapter
+  tumpa            = TIAO USB Multi-Protocol Adapter
+  UM232H           = FT232H based module from FTDI and Glyn.com.au
+  uncompatino      = uncompatino with all pairs of pins shorted
+  usbasp           = USBasp, http://www.fischl.de/usbasp/
+  usbasp-clone     = Any usbasp clone with correct VID/PID
+  usbtiny          = USBtiny simple USB programmer, http://www.ladyada.net/make/usbtinyisp/
+  wiring           = Wiring
+  xil              = Xilinx JTAG cable
+  xplainedmini     = Atmel AVR XplainedMini in ISP mode
+  xplainedmini_dw  = Atmel AVR XplainedMini in debugWIRE mode
+  xplainedpro      = Atmel AVR XplainedPro in JTAG mode
+
+]]></Verbatim>
+      </FormalItem>
+      <Paragraph>
+        We need to tell <Term type="expression">avrdude</Term> what kind of microcontroller we're using so that it knows
+        what programming commands to send. In this case, we're using an
+        <Term type="expression">atmega328p</Term>. We can now put all of this together and execute a command to read the
+        current fuse bit values on the microcontroller. Ensure that your programmer is connected, and that the
+        breadboard power supply is switched on, and execute the following command:
+      </Paragraph>
+      <FormalItem title="Supported Programmers"
+                  id="927bec93-c6ad-44d5-ade3-f943a27ebb58">
+        <Verbatim><![CDATA[$ avrdude -c usbtiny -p atmega328p
+avrdude: AVR device initialized and ready to accept instructions
+Reading | ################################################## | 100% 0.01s
+avrdude: Device signature = 0x1e950f (probably m328p)
+avrdude: safemode: Fuses OK (E:FF, H:D9, L:62)
+avrdude done.  Thank you.
+        ]]></Verbatim>
+      </FormalItem>
+      <Paragraph>
+        If we take a look at the datasheet, we can see that the fuse bits are divided up into
+        <Term type="term">extended</Term>, <Term type="term">high</Term>, and
+        <Term type="term">low</Term>
+        fuse bits. The default values for the fuse bits are given on pages 292 and 293 (the table for the extended fuse
+        is not reproduced here for reasons of brevity):
+      </Paragraph>
+      <FormalItem title="Low Fuse Bits"
+                  id="3d125bf9-6334-4b24-9784-85c99e4afbe9">
+        <Image source="lowFuse.png"
+               width="640"
+               height="434">Low Fuse Bits
+        </Image>
+      </FormalItem>
+      <FormalItem title="High Fuse Bits"
+                  id="6ac44fa2-c8c9-4160-b3e2-8dce8f9844dd">
+        <Image source="highFuse.png"
+               width="640"
+               height="504">High Fuse Bits
+        </Image>
+      </FormalItem>
+      <Paragraph>
+        We can see that the default values for the extended, high, and low fuses are
+        <Term type="constant">0b11111111 (0xff)</Term>, <Term type="constant">0b11011001 (0xd9)</Term>, and
+        <Term type="constant">0b01100010 (0x62)</Term>, respectively. We can see that matches the values returned by <Term type="expression">
+        avrdude
+      </Term> and therefore we can be confident that both the programmer and the chip are working correctly.
+      </Paragraph>
+    </Subsection>
+
+    <Subsection title="Setting The Clock"
+                id="867941c5-6077-4cab-a3b9-4d3c26ce165a">
+      <Paragraph>
+        As mentioned <Link target="830759ee-41d6-49e1-adae-a492d2172450">earlier</Link>, the ATMega328p chip is
+        configured by default to use an internal 8mhz oscillator effectively reduced to 1mhz. We've connected an
+        external 16mhz oscillator crystal and therefore we need to set some fuse bits in order to tell the
+        microcontroller to actually use it. The information on this in the datasheet is, to say the least, arduous.
+        Working through the "System Clock and Clock Options" section of the datasheet, starting on page 36, our first
+        task is to disable the clock divider so that our 16mhz external clock isn't reduced to 2mhz. We quickly reach
+        the following paragraph:
+      </Paragraph>
+      <Paragraph type="quote">
+        "The device is shipped with internal RC oscillator at 8.0MHz and with the fuse CKDIV8 programmed, resulting in
+        1.0MHz system clock. The startup time is set to maximum and time-out period enabled. (CKSEL = "0010", SUT =
+        "10", CKDIV8 = "0"). The default setting ensures that all users can make their desired clock source setting
+        using any available programming interface."
+      </Paragraph>
+      <Paragraph>
+        Therefore, we need to set the <Term type="bit">CKDIV8</Term> bit to <Term type="constant">1</Term>. Somewhat
+        counter-intuitively, fuse bits are considered "enabled" or "programmed" if they are set to
+        <Term type="constant">0</Term>, and "unprogrammed" or "disabled" if they are set to
+        <Term type="constant">1</Term>. Searching the datasheet for <Term type="bit">CKDIV8</Term> eventually leads us
+        back to page 292 where we can see that bit <Term type="constant">7</Term> of the low fuse is the <Term type="bit">
+        CKDIV8
+      </Term> bit and is set to <Term type="constant">0</Term> (enabled) by default. Fuse values cannot be programmed
+        one bit at a time; it's necessary to set all eight bits of a given fuse in a single operation. We therefore need
+        to know what all of the bits are going to be before we can set them. We at least now know that our final low
+        fuse value will have to be
+        <Term type="constant">0b1???????</Term>, where <Term type="constant">?</Term> indicates not-yet-known values.
+      </Paragraph>
+      <Paragraph>
+        Next, we need to tell the microcontroller to actually use our external clock. Looking back at page 37 of the
+        datasheet, we can see that there are four "clock select" bits named <Term type="bit">CKSEL0</Term>,
+        <Term type="bit">CKSEL1</Term>, <Term type="bit">CKSEL2</Term>, and <Term type="bit">CKSEL3</Term>. We happen to
+        be using a 16mhz <Term type="term">low power crystal oscillator</Term>, and we can see from the table that we
+        should set <Term type="bit">CKSEL1..3</Term> to <Term type="constant">0b111</Term>:
+      </Paragraph>
+      <FormalItem title="Clock Bits"
+                  id="aa961c49-9e54-455e-9a92-47028c57b093">
+        <Image source="clockTable.png"
+               width="640"
+               height="229">Clock Bits
+        </Image>
+      </FormalItem>
+      <Paragraph>
+        We're also required to set the start-up time. This is required because some types of oscillators and clocks take
+        longer than other types to stabilize and output a consistent pulse rate. There appear to be no downsides to
+        picking the most conservative (highest) values, which in this case means a 14 tick + 65 millisecond delay when
+        resetting the microcontroller. We can see from the table that we need to set the two "start up time" bits, <Term type="bit">
+        SUT0
+      </Term> and <Term type="bit">SUT1</Term>, and the remaining
+        <Term type="bit">CKSEL0</Term>
+        bit to <Term type="constant">0b11</Term> and <Term type="constant">0b1</Term>, respectively.
+      </Paragraph>
+      <FormalItem title="Startup Bits"
+                  id="416854c2-8524-4d80-b708-53fe74764d4b">
+        <Image source="startupTable.png"
+               width="640"
+               height="452">Startup Bits
+        </Image>
+      </FormalItem>
+      <Paragraph id="23ada867-fadd-40b3-b4fd-3d1bcec722de">
+        Putting all of this together, we have <Term type="expression">CKSEL0..3 = 0b1111</Term>,
+        <Term type="expression">SUT0..1 = 0b11</Term>, <Term type="expression">CKDIV8 = 0b1</Term>, which leaves only
+        one remaining bit in the low fuse value: <Term type="bit">CKOUT</Term>. The purpose of the
+        <Term type="bit">CKOUT</Term>
+        bit is to instruct the microcontroller to output the clock pulse it is receiving on a separate pin. We have no
+        use for this, and therefore <Term type="expression">CKOUT = 0b1</Term>. This, somewhat anti-climactically given
+        the amount of datasheet scanning it took to get here, means that our resulting low fuse value will
+        be <Term type="constant">0b11111111</Term>. We can instruct
+        <Term type="expression">avrdude</Term>
+        to set this value:
+      </Paragraph>
+      <FormalItem title="Setting The Low Fuse"
+                  id="4be7ee4d-53d0-4b57-a704-c342280ea1b3">
+        <Verbatim><![CDATA[$ avrdude -c usbtiny -p atmega328p -U lfuse:w:0xff:m
+avrdude: AVR device initialized and ready to accept instructions
+Reading | ################################################## | 100% 0.01s
+
+avrdude: Device signature = 0x1e950f (probably m328p)
+avrdude: reading input file "0xff"
+avrdude: writing lfuse (1 bytes):
+Writing | ################################################## | 100% 0.00s
+
+avrdude: 1 bytes of lfuse written
+avrdude: verifying lfuse memory against 0xff:
+avrdude: load data lfuse data from input file 0xff:
+avrdude: input file 0xff contains 1 bytes
+avrdude: reading on-chip lfuse data:
+Reading | ################################################## | 100% 0.00s
+
+avrdude: verifying ...
+avrdude: 1 bytes of lfuse verified
+avrdude: safemode: Fuses OK (E:FF, H:D9, L:FF)
+
+avrdude done.  Thank you.
+        ]]></Verbatim>
+      </FormalItem>
+      <Paragraph>
+        The <Term type="expression">-U lfuse:w:0xff:m</Term> option specifies that we want to perform a write operation
+        (<Term type="expression">w</Term>) on the low fuse value (<Term type="expression">lfuse</Term>), and we want to
+        specify an immediate value (<Term type="expression">m</Term>) of <Term type="expression">0xff</Term>. It's also
+        possible to read values from files if the <Term type="expression">m</Term> flag is not used.
+      </Paragraph>
+    </Subsection>
+
+    <Footnote id="b9a08c27-faed-4e8d-8612-026e298e000d">
+      "AVR Downloader/UploaDEr" for the morbidly curious.
+    </Footnote>
+  </Section>
+
+  <Section title="Hello World"
+           id="2df1df0f-a46e-485a-aeb1-f2248c23e4a7">
+    <Subsection title="Overview">
+      <Paragraph>
+        The canonical "hello world" program for microcontrollers is commonly known as
+        <Term type="term">Blink</Term>. The program takes many forms, but generally amounts to this:
+      </Paragraph>
+      <FormalItem title="Blink"
+                  id="19f6fefb-99dd-4058-83ef-13b0c5970344">
+        <ListOrdered>
+          <Item>Turn on an LED.</Item>
+          <Item>Wait a second or so.</Item>
+          <Item>Turn off the LED.</Item>
+          <Item>Go to step 1.</Item>
+        </ListOrdered>
+      </FormalItem>
+      <Paragraph>
+        We're going write an increasingly difficult version of Blink, referencing the datasheets for all necessary
+        information. The first version will be written in <LinkExternal target="http://ww1.microchip.com/downloads/en/DeviceDoc/AVR-Instruction-Set-Manual-DS40002198A.pdf">
+        AVR assembler
+      </LinkExternal> (but assembled using the free
+        <LinkExternal target="https://gcc.gnu.org/">GCC</LinkExternal>
+        compiler), and we'll proceed to the C version afterwards. Assembly language examples are written using the
+        <LinkExternal target="https://sourceware.org/binutils/docs/as/">GNU Assembler</LinkExternal>.
+      </Paragraph>
+    </Subsection>
+
+    <Subsection title="Address Spaces"
+                id="76cdd37a-4b48-4fb5-a592-b3a825bd620d">
+      <Paragraph>
+        The AVR architecture used in the ATMega328p is slightly atypical in that it is an unmodified
+        <LinkExternal target="https://en.wikipedia.org/wiki/Harvard_architecture">Harvard architecture</LinkExternal>
+        with completely separate address spaces for code and data. C/C++ programmers are, at the time of writing,
+        accustomed to having code and data live within the same address space. The reason this is important to mention
+        is because it's often necessary to specify the addresses of functions and objects when programming
+        microcontrollers, and it's critical to understand that address <Term type="constant">0x0000</Term> in program
+        space is not the same as address <Term type="constant">0x0000</Term> in data space! The AVR actually exposes
+        different instructions to read from and write to locations in program space as opposed to data space. This can
+        have practical consequences when programming in C on this architecture, because although the ATMega328p has 32
+        kilobytes of code space, it only has 2 kilobytes of data space. A programmer that declares a variable of type <Term type="expression">
+        const unsigned char[2048]
+      </Term> might be dismayed to realize that they've just consumed the entirety of the working memory on the system,
+        despite the fact that the variable is <Term type="expression">const</Term> and could fit comfortably into the 32
+        kilobytes of code space. In order for a <Term type="expression">const</Term> variable to be placed into code
+        space, it's necessary to use <Term type="term">Named Address Spaces</Term> from the current
+        <LinkExternal target="http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1275.pdf">N1275 Embedded C</LinkExternal>
+        draft standard. Named address spaces are available as a
+        <LinkExternal target="https://gcc.gnu.org/onlinedocs/gcc/Named-Address-Spaces.html">GCC extension</LinkExternal>
+        , and we'll be revisiting them later on. The AVR microcontrollers actually use many different address spaces,
+        but we'll only be seeing a few of them in this book.
+      </Paragraph>
+      <Paragraph>
+        Throughout this document, the following notation will be used:
+      </Paragraph>
+      <FormalItem title="Address Spaces"
+                  id="3c4834f5-3b81-45ec-b028-f768287f1ee5">
+        <ListUnordered>
+          <Item>
+            <Term type="expression">code@0xNNNN</Term>
+            denotes address
+            <Term type="expression">0xNNNN</Term>
+            in code space.
+          </Item>
+          <Item>
+            <Term type="expression">data@0xNNNN</Term>
+            denotes address
+            <Term type="expression">0xNNNN</Term>
+            in data space.
+          </Item>
+          <Item>
+            <Term type="expression">io@0xNNNN</Term>
+            denotes address
+            <Term type="expression">0xNNNN</Term>
+            in I/O space.
+          </Item>
+        </ListUnordered>
+      </FormalItem>
+    </Subsection>
+
+    <Subsection title="Interrupt Vectors"
+                id="85476ce8-38d7-4b82-8ad8-7189c914d6f1">
+      <Paragraph>
+        As soon as the microcontroller powers on, it begins executing code from a location specified by the fuse
+        bit <Term type="bit">BOOTRST</Term>. The default configuration for the ATMega328p specifies
+        that <Term type="expression">BOOTRST = 0</Term>, and page 276 of the datasheet indicates that this means that
+        execution will start at program address <Term type="expression">code@0x0000</Term> when the microcontroller is
+        powered on. We won't be changing this default setting.
+      </Paragraph>
+      <Paragraph>
+        The code that lives at <Term type="expression">code@0x0000</Term> represents the
+        <Term type="term">interrupt table</Term>. The interrupt table is a 26-element array where each element consists
+        of two instruction words. The instructions will, in practice, typically always perform an unconditional jump to
+        some subroutine in memory.
+      </Paragraph>
+      <Paragraph>
+        The full table of interrupts is described on page 74 of the datasheet:
+      </Paragraph>
+      <FormalItem title="Interrupt Table Listing"
+                  id="34e7607f-3fe5-4530-827a-2dec8da58049">
+        <Image source="interrupts.png"
+               width="640"
+               height="849">Interrupt Table Listing
+        </Image>
+      </FormalItem>
+      <Paragraph>
+        The first element of the interrupt table is executed in response to a <Term type="expression">RESET</Term> interrupt,
+        and therefore the instructions in this element of the table will always be the first instructions executed when
+        the microcontroller powers on. Because, in this example, we aren't planning to use interrupts at all, we can
+        actually provide a very simple interrupt table that simply jumps to a function we provide
+        called <Term type="function">__avr_setup</Term>:
+      </Paragraph>
+
+      <FormalItem title="AVR Interrupt Table">
+        <Verbatim><![CDATA[
+.text
+
+.global __avr_setup
+.global __avr_interrupt_vectors
+.global __avr_unexpected_interrupt
+
+.org 0x0000
+
+__avr_interrupt_vectors:
+  jmp __avr_setup
+  jmp __avr_unexpected_interrupt
+  jmp __avr_unexpected_interrupt
+  jmp __avr_unexpected_interrupt
+  jmp __avr_unexpected_interrupt
+  jmp __avr_unexpected_interrupt
+  jmp __avr_unexpected_interrupt
+  jmp __avr_unexpected_interrupt
+  jmp __avr_unexpected_interrupt
+  jmp __avr_unexpected_interrupt
+  jmp __avr_unexpected_interrupt
+  jmp __avr_unexpected_interrupt
+  jmp __avr_unexpected_interrupt
+  jmp __avr_unexpected_interrupt
+  jmp __avr_unexpected_interrupt
+  jmp __avr_unexpected_interrupt
+  jmp __avr_unexpected_interrupt
+  jmp __avr_unexpected_interrupt
+  jmp __avr_unexpected_interrupt
+  jmp __avr_unexpected_interrupt
+  jmp __avr_unexpected_interrupt
+  jmp __avr_unexpected_interrupt
+  jmp __avr_unexpected_interrupt
+  jmp __avr_unexpected_interrupt
+  jmp __avr_unexpected_interrupt
+  jmp __avr_unexpected_interrupt
+
+__avr_unexpected_interrupt:
+  jmp __avr_interrupt_vectors
+
+]]></Verbatim>
+      </FormalItem>
+
+      <Paragraph>
+        Essentially, the first entry of the <Term type="function">__avr_interrupt_vectors</Term> table performs an
+        unconditional jump to a not-yet-defined function called
+        <Term type="function">__avr_setup</Term>. Every other entry in the table first jumps to
+        <Term type="function">__avr_unexpected_interrupt</Term>, and then jumps back to the first entry of the <Term type="function">
+        __avr_interrupt_vectors
+      </Term> table. In effect, this causes any interrupt raised to cause the microcontroller to behave as if it had
+        been reset. The intermediate
+        <Term type="function">__avr_unexpected_interrupt</Term>
+        function purely exists to assist with debugging; the user can set a breakpoint on the <Term type="function">
+        __avr_unexpected_interrupt
+      </Term> function to be notified whenever the program receives an interrupt it wasn't expecting.
+      </Paragraph>
+    </Subsection>
+
+    <Subsection title="Setting Up The Stack"
+                id="7939f090-33e7-47b8-b087-44cffdd0d862">
+      <Paragraph>
+        Now that <Link target="85476ce8-38d7-4b82-8ad8-7189c914d6f1">interrupts</Link> have been configured, and the
+        execution path of the code leads to the
+        <Term type="function">__avr_setup</Term>
+        function, it's time to actually define that function. The function has three responsibilities:
+      </Paragraph>
+      <FormalItem title="Setup Actions"
+                  id="61b0f097-4a24-4236-a167-ccc73808f1cb">
+        <ListOrdered>
+          <Item>The function must clear the AVR <Term type="term">status register</Term>.
+          </Item>
+          <Item>The function must set up the AVR <Term type="term">stack pointer</Term>.
+          </Item>
+          <Item>The function must begin executing the programmer's application code.</Item>
+        </ListOrdered>
+      </FormalItem>
+      <Paragraph>
+        The AVR <Term type="term">status register</Term> (referred to as <Term type="register">SREG</Term> in the
+        datasheet) is a register that enabled and disables interrupts, and provides information about the most recently
+        executed arithmetic operation such as indicating overflows, carries, and so on. The status register should be
+        manually cleared on startup in order to ensure that the microcontroller has a clean slate with regards to
+        execution state. The status register is accessible at address
+        <Term type="expression">io@0x003f</Term>, and can be assigned using the special
+        instruction <Term type="instruction">out</Term>, which can store a value in the address range dedicated to the
+        microcontroller's I/O registers.
+      </Paragraph>
+      <Paragraph>
+        The AVR <Term type="term">stack pointer</Term> points to the top of the execution stack. As with most
+        architectures, the AVR execution stack grows downwards from higher addresses to lower addresses. The AVR <Term type="expression">
+        push
+      </Term> instruction pushes data onto the stack, which results in the stack pointer being decremented by 1. In
+        other words, if the stack pointer is currently pointing at address <Term type="expression">data@0x03ff</Term>,
+        and a <Term type="expression">push</Term> instruction is executed, the stack pointer will now be pointing at
+        address <Term type="expression">data@0x03fe</Term>. The AVR <Term type="expression">pop</Term> instruction is
+        the exact inverse; the stack pointer will be incremented. It's necessary, on startup of the microcontroller, for
+        the programmer to initialize the stack pointer to a sensible value. In practice, this value is always the
+        address of the top of the SRAM. On the ATMega328p, the data sheet indicates on page 28 that the internal SRAM
+        ranges from
+        <Term type="expression">data@0x0100</Term>
+        to <Term type="expression">data@0x08ff</Term> inclusive. The 16-bit stack pointer is implemented as a pair of
+        8-bit registers, with the high 8 bits at
+        <Term type="expression">io@0x003e</Term>
+        and the low 8 bits at
+        <Term type="expression">io@0x003d</Term>.
+      </Paragraph>
+      <Paragraph>
+        Given all of this information, we can now write the <Term type="function">__avr_setup</Term> function:
+      </Paragraph>
+      <FormalItem title="AVR Setup">
+        <Verbatim><![CDATA[
+__avr_stack_pointer_h = 0x3e
+__avr_stack_pointer_l = 0x3d
+__avr_status_register = 0x3f
+
+__avr_setup:
+  # Clear the status register
+  ldi r16,0x0
+  out __avr_status_register,r16
+
+  # Configure the stack pointer to start at 0x08ff
+  ldi r16,0x08
+  out __avr_stack_pointer_h,r16
+  ldi r16,0xff
+  out __avr_stack_pointer_l,r16
+
+  # Execute main
+  call main
+]]></Verbatim>
+      </FormalItem>
+      <Paragraph>
+        The function loads <Term type="constant">0</Term> into register <Term type="expression">r16</Term>, and then
+        stores the value of <Term type="expression">r16</Term> into I/O location
+        <Term type="expression">0x3f</Term>. This clears the status register.
+      </Paragraph>
+      <Paragraph>
+        The function then loads <Term type="constant">0x08</Term> into register <Term type="expression">r16</Term>, and
+        stores the value of <Term type="expression">r16</Term> into I/O location
+        <Term type="expression">0x3e</Term>. It immediately follows by storing
+        <Term type="constant">0xff</Term>
+        into I/O location <Term type="expression">0x3d</Term>. This has the effect of setting the stack pointer to <Term type="expression">
+        0x08ff
+      </Term> - the top of SRAM.
+      </Paragraph>
+      <Paragraph>
+        The function then calls a yet-to-be-defined function called <Term type="function">main</Term> that will
+        eventually contain our Blink code.
+      </Paragraph>
+    </Subsection>
+
+    <Subsection title="Connecting An LED"
+                id="be4eec9d-17fd-47b8-a65b-1abe7760dd94">
+      <Paragraph>
+        In order to implement Blink, we first need to connect an LED that we can turn on and off from the
+        microcontroller. On page 13 of the datasheet, we can see numerous
+        <Term type="term">ports</Term>
+        listed that span sets of pins. A <Term type="term">port</Term> is, essentially, an I/O register: Setting a
+        single bit in the register to <Term type="constant">1</Term> will set the corresponding pin voltage high, whilst
+        setting the same bit to <Term type="constant">0</Term> will set the corresponding pin voltage low. The first
+        port listed on page 13 is Port B, and we can see that this consists of eight pins/bits named <Term type="pin">
+        PB0
+      </Term> to <Term type="pin">PB7</Term>. If we try to find
+        <Term type="pin">PB0</Term>
+        on the
+        <Link target="aceaf082-70f9-4e36-bb82-120674524895">pin configuration</Link>
+        diagram on page 12, we'll find that <Term type="pin">PB0</Term> is associated with pin 14, on the bottom left
+        corner of the IC. We can see that pin 14 can also be configured to provide a number of different functions, such
+        as <Term type="bit">CLKO</Term> (the pin used to for the
+        <Link target="23ada867-fadd-40b3-b4fd-3d1bcec722de">clock output</Link>
+        we briefly encountered earlier). We can search the datasheet for the definitions of all of these things but, as
+        we don't need them and they're all disabled by default, it's clear that we can safely use pin 14 to control our
+        LED.
+      </Paragraph>
+      <Paragraph>
+        We can see on page 323 of the datasheet that the minimum output voltage any given ATMega328p will provide on an
+        output pin when the voltage is set high is <Term type="constant">4.2V</Term>. The LED specified in the
+        <Link target="e376161d-eefd-4933-99aa-c762394a2c7b">bill of materials</Link>
+        will be damaged if we supply it with this much current, so we need to connect it in series with a <Term type="constant">
+        220Ω
+      </Term> resistor. Note that LEDs are
+        <Term type="term">polarized</Term>
+        components and therefore must be connected in the correct orientation. The
+        <Term type="term">negative</Term>
+        side or <Term type="term">cathode</Term> of the LED must be connected to ground. LED components always provide
+        some way to indicate orientation, either by making the <Term type="term">positive</Term> or
+        <Term type="term">anode</Term>
+        leg of the LED longer, or by angling the internal construction of the internal <Term type="term">leadframe
+      </Term> such that it points towards the
+        <Term type="term">positive</Term>
+        side<LinkFootnote target="68f90f64-7a0f-4cb5-b650-f9eeaf783876"/>:
+      </Paragraph>
+      <FormalItem title="LED"
+                  id="57d0d486-45c3-4e46-b1f7-31984e104173">
+        <Image source="led.png"
+               width="640"
+               height="385">LED
+        </Image>
+      </FormalItem>
+      <FormalItem title="Connections"
+                  id="fb106341-cbfa-4929-baf4-4f7c34d0a26e">
+        <ListOrdered>
+          <Item>Connect a <Term type="constant">220Ω</Term> resistor to pin 14 on the microcontroller.
+          </Item>
+          <Item>Connect an LED to the resistor and to ground.</Item>
+        </ListOrdered>
+      </FormalItem>
+      <FormalItem title="Blink LED Circuit"
+                  id="0dee6234-bcaa-4b3d-a330-6d5669651572">
+        <Image source="boardLED.jpg"
+               width="640"
+               height="463">Blink LED Circuit
+        </Image>
+      </FormalItem>
+      <Paragraph>
+        Note that, in the image above, the <Term type="term">anode</Term> leg of the LED has been soldered to the
+        resistor rather than both the resistor and the <Term type="term">anode</Term> leg being plugged into the
+        breadboard. This is purely for convenience and isn't necessary for the circuit to function.
+      </Paragraph>
+    </Subsection>
+
+    <Subsection title="Writing Blink"
+                id="361ae655-ff31-410e-a422-888c5b2161a8">
+      <Paragraph>
+        Now that we have an LED connected, it's time to write the actual function that will turn the LED on and off and
+        a fixed interval. We know that the LED is connected to Port B, pin
+        <Term type="pin">PB0</Term>, and page 84 of the datasheet tells us that there are three I/O memory address
+        locations associated with any given port: A <Term type="register">DDR</Term> register that controls whether a
+        pin is used as an input or an output, a <Term type="register">PORT</Term> register that allows for setting a pin
+        high or low when the pin is used as an output, and a
+        <Term type="register">PIN</Term>
+        register that is used to read the value of a pin when the pin is used as an input. We can largely ignore the <Term type="register">
+        PIN
+      </Term> register as we're only concerned with output at the moment. The datasheet, over the next few pages,
+        describes the method to use for reading or writing pins. Reduced to the essentials: We need to set
+        <Term type="pin">PB0</Term>
+        as an output pin by setting bit <Term type="bit">0</Term> of the <Term type="register">DDRB</Term> register
+        to <Term type="constant">1</Term>, and then we can set the pin high or low by setting bit <Term type="bit">0
+      </Term> of the <Term type="register">PORTB</Term> register to
+        <Term type="constant">1</Term>
+        or <Term type="constant">0</Term>, respectively. We can jump to the complete summary of all registers on the
+        microcontroller on page 624 to determine the I/O locations of these registers:
+      </Paragraph>
+
+      <FormalItem title="IO Locations"
+                  id="f2a6b651-b376-4185-a0d9-4da2a4e876a9">
+        <Image source="ioSummary.png"
+               width="640"
+               height="399">IO Locations
+        </Image>
+      </FormalItem>
+
+      <Paragraph>
+        We can see that <Term type="register">DDRB</Term> is at
+        <Term type="constant">io@0x04</Term>
+        and
+        <Term type="constant">io@0x05</Term>
+        <LinkFootnote target="db20346b-43ab-4852-b6a6-c8779b4f866f"/>. All of this amounts to the following assembler
+        instructions:
+      </Paragraph>
+
+      <FormalItem title="Setting LED On/Off"
+                  id="16a9ae21-d6e9-4cb5-abd4-e0a2d6345071">
+        <Verbatim><![CDATA[
+__DDRB = 0x04
+__PORTB = 0x05
+
+  # Set the PB0 pin as an output pin
+  ldi r16,1
+  out __DDRB,r16
+
+  # Set the PB0 pin high
+  ldi r16,1
+  out __PORTB,r16
+
+  # Set the PB0 pin low
+  ldi r16,0
+  out __PORTB,r16
+]]></Verbatim>
+      </FormalItem>
+      <Paragraph>
+        Note that, by assigning to the <Term type="register">DDRB</Term> and
+        <Term type="register">PORTB</Term>
+        registers like this, we're actually setting all eight bits of each register. In a more complex program that used
+        a mix of input and output pins in each port, we would want to carefully shift and mask bits in order to avoid
+        disturbing the existing values in the registers. In our Blink circuit, however, all of the other pins in Port B
+        are unused, so we can recklessly assign them without worrying.
+      </Paragraph>
+      <Paragraph>
+        We still have one piece of the puzzle remaing: We need to wait for a fixed interval before turning the LED on
+        and/or off, otherwise the microcontroller will simply flash the LED on and off too quickly for any human to
+        perceive. At this point, the simplest way we can achieve this is to simply waste CPU time executing instructions
+        that otherwise do nothing. In other words, we want the moral equivalent of this C function:
+      </Paragraph>
+
+      <FormalItem title="Spin Uselessly"
+                  id="45b38d14-dc3a-40f6-abf2-8880c9c5cc58">
+        <Verbatim><![CDATA[
+void pause (void) {
+  for (volatile int index = 0; index < 1000000; ++index) {
+    // Do nothing
+  }
+}
+]]></Verbatim>
+      </FormalItem>
+
+      <Paragraph>
+        Now, given that we only have 8-bit registers to work with, the simplest way to implement a loop like this is to
+        implement three nested loops that each count to <Term type="constant">100</Term>:
+      </Paragraph>
+
+      <FormalItem title="Spin Uselessly In 8 Bits"
+                  id="d1904e30-d30e-44b0-8a46-6e528e341451">
+        <Verbatim><![CDATA[
+void pause (void) {
+  for (volatile uint8_t z = 0; z < 100; ++z) {
+    for (volatile uint8_t y = 0; y < 100; ++y) {
+      for (volatile uint8_t z = 0; z < 100; ++z) {
+        // Do nothing
+      }
+    }
+  }
+}
+]]></Verbatim>
+      </FormalItem>
+
+      <Paragraph>
+        In AVR assembler, the <Term type="function">pause</Term> function looks like this:
+      </Paragraph>
+
+      <FormalItem title="Spin Uselessly In Assembler"
+                  id="b44e2478-6d26-4ed1-bcd4-1230c9d88731">
+        <Verbatim><![CDATA[
+pause:
+  ldi r16,1
+.LZ:
+  cpi r16,100
+  breq .LZend
+  inc r16
+  ldi r17,0
+.LY:
+  cpi r17,100
+  breq .LYend
+  inc r17
+  ldi r18,0
+.LX:
+  cpi r18,100
+  breq .LXend
+  inc r18
+  jmp .LX
+.LXend:
+  jmp .LY
+.LYend:
+  jmp .LZ
+.LZend:
+  ret
+]]></Verbatim>
+      </FormalItem>
+
+      <Paragraph>
+        It's not too critical to understand how this code achieves the above loop, although the implementation is
+        straightforward given the definitions in the AVR instruction set manual. We will, in later revisions of Blink,
+        be replacing this code with code that uses the hardware timers for accurate delays.
+      </Paragraph>
+
+      <Paragraph>
+        Our complete Blink program in assembler now looks like this:
+      </Paragraph>
+
+      <FormalItem title="Blink In Assembler"
+                  id="ea3ef8b5-4171-4f70-9780-62c70408fcb1">
+        <Verbatim>
+          <xi:include href="blink.s"
+                      parse="text"/>
+        </Verbatim>
+      </FormalItem>
+
+      <Paragraph>
+        With that code placed in a file named <Term type="file">blink.s</Term>, we can compile the code using
+        <Term type="command">avr-gcc</Term>
+        and produce an
+        <LinkExternal target="https://en.wikipedia.org/wiki/Intel_HEX">ihex</LinkExternal>
+        file that can be flashed directly to the ATMega328p using <Term type="command">avrdude</Term>:
+      </Paragraph>
+
+      <FormalItem title="Compiling Blink Assembler"
+                  id="33e08016-76be-4f93-acf6-0754659cd61a">
+        <Verbatim><![CDATA[
+# Compile the code
+$ avr-gcc -nostartfiles -nodefaultlibs -nolibc -nostdlib -ffreestanding -mmcu=atmega328p -o blink blink.s
+
+# Convert the executable to ihex format
+$ avr-objcopy -j .text -j .data -O ihex blink blink.hex
+
+# Flash the code to the ATMega328p
+$ avrdude -p atmega328p -c usbtiny -U flash:w:blink.hex:i
+]]></Verbatim>
+      </FormalItem>
+
+      <Paragraph>
+        The first command compiles the code using <Term type="command">avr-gcc</Term>. We're required to specify that
+        we're compiling for the ATMega328p so that the compiler doesn't produce any instructions that the ATMega328p
+        does not support<LinkFootnote target="39b0b37e-717c-417d-bd56-aee9a1298a0e"/>. We're required to specify all of
+        the
+        <Term type="expression">-nostartfiles -nodefaultlibs -nolibc -nostdlib -ffreestanding</Term>
+        options because
+        <Term type="command">gcc</Term>
+        is, after all, a C compiler, and by default it will try to insert its own version of all of the AVR
+        platform-specific startup code that we've already written ourselves in assembler. See the
+        <LinkExternal target="https://gcc.gnu.org/onlinedocs/gcc/index.html">GCC manual</LinkExternal>
+        for the definitions of these options; they largely amount to saying <Term type="quote">"I've written all of the
+        setup code myself so don't try to generate anything for me"</Term>.
+      </Paragraph>
+
+      <Paragraph>
+        The second command uses <Term type="command">avr-objcopy</Term> to copy the
+        <Term type="constant">.text</Term>
+        and <Term type="constant">.data</Term> sections from the resulting
+        <Term type="file">blink</Term>
+        executable, and to convert the result into
+        <LinkExternal target="https://en.wikipedia.org/wiki/Intel_HEX">ihex</LinkExternal>
+        format. This is the input format that <Term type="command">avrdude</Term> is typically configured to use in
+        order to flash code to the microcontroller. In our case, the <Term type="constant">.data</Term> section is
+        actually empty because our assembler program doesn't declare any variables in memory.
+      </Paragraph>
+
+      <Paragraph>
+        The final command flashes the code contained in <Term type="file">blink.hex</Term> to the microcontroller. We
+        indicate that we want to write (<Term type="expression">w</Term>), to flash memory (<Term type="expression">
+        flash</Term>), the file <Term type="expression">blink.hex</Term>, and the input format is <Term type="expression">
+        ihex
+      </Term> (<Term type="expression">i</Term>). Note that
+        <Term type="command">avrdude</Term>
+        erases the contents of flash memory, writes the specified data, and then reads it back from flash memory and
+        verifies that the data was written as expected. Chips have a limited number of times (typically in the tens of
+        thousands) that they can be written before the flash memory begins to exhibit errors, so this verification step
+        is critical. As soon as the flash operation has completed, the microcontroller will be reset, and you should be
+        presented with an LED blinking at a rate of about twice per second.
+      </Paragraph>
+
+      <FormalItem title="Flashing Blink Assembler"
+                  id="33f57e3b-7213-4e62-a218-9639c616430f">
+        <Verbatim><![CDATA[
+$ avrdude -p atmega328p -c usbtiny -U flash:w:blink.hex:i
+avrdude: AVR device initialized and ready to accept instructions
+Reading | ################################################## | 100% 0.01s
+
+avrdude: Device signature = 0x1e950f (probably m328p)
+avrdude: NOTE: "flash" memory has been specified, an erase cycle will be performed
+         To disable this feature, specify the -D option.
+avrdude: erasing chip
+avrdude: reading input file "blink.hex"
+avrdude: writing flash (186 bytes):
+Writing | ################################################## | 100% 0.64s
+
+avrdude: 186 bytes of flash written
+avrdude: verifying flash memory against blink.hex:
+avrdude: load data flash data from input file blink.hex:
+avrdude: input file blink.hex contains 186 bytes
+avrdude: reading on-chip flash data:
+Reading | ################################################## | 100% 0.46s
+
+avrdude: verifying ...
+avrdude: 186 bytes of flash verified
+avrdude: safemode: Fuses OK (E:FF, H:D9, L:FF)
+avrdude done.  Thank you.
+]]></Verbatim>
+      </FormalItem>
+    </Subsection>
+
+    <Footnote id="68f90f64-7a0f-4cb5-b650-f9eeaf783876">
+      Do not be concerned about damaging the LED by connecting it in the wrong orientation. Most LEDs will not be
+      damaged, but will simply fail to light up when connected in the wrong orientation.
+    </Footnote>
+
+    <Footnote id="db20346b-43ab-4852-b6a6-c8779b4f866f">
+      The datasheet seems to assume that people will magically know that the values in parentheses are data address
+      space locations, and the values to the left of those are I/O space locations.
+    </Footnote>
+
+    <Footnote id="39b0b37e-717c-417d-bd56-aee9a1298a0e">
+      Given that our input is a single assembler file, the compiler won't actually be generating any new instructions.
+      We're required to specify the microcontroller regardless.
+    </Footnote>
+  </Section>
+
+  <Section title="Hello World Again"
+           id="bcaced27-b71f-4e7c-be20-91b15d25add6">
+    <Subsection title="Overview">
+      <Paragraph>
+        In the <Link target="2df1df0f-a46e-485a-aeb1-f2248c23e4a7">previous section</Link>, we put together a working
+        Blink program using assembler. However, the program has a number of limitations:
+      </Paragraph>
+      <FormalItem title="Limitations"
+                  id="2577ab83-f352-446e-a06b-b3fa7bf339a8">
+        <ListUnordered>
+          <Item>
+            The program requires a lot of setup code. Roughly 50% of the actual assembler text has nothing to do with
+            Blink.
+          </Item>
+          <Item>
+            The program doesn't use any kind of accurate timer for pausing between toggling the LED on and off. It
+            simply wastes execution time in a manner that's highly dependent on the microcontroller clock speed.
+          </Item>
+          <Item>
+            The Blink program is usually accompanied by some kind of text debugging output that can be observed on a
+            serial console or some similar connection when the program is running. Our Blink program doesn't do any of
+            this.
+          </Item>
+        </ListUnordered>
+      </FormalItem>
+      <Paragraph>
+        Largely, the first problem can be eliminated by writing the program in C and allowing the compiler to generate
+        its own platform initialization code. Essentially, we'll allow the compiler to generate
+        <Link target="85476ce8-38d7-4b82-8ad8-7189c914d6f1">__avr_interrupt_vectors</Link>
+        and
+        <Link target="7939f090-33e7-47b8-b087-44cffdd0d862">__avr_setup</Link>
+        for us. We can inspect the generated code as a learning exercise to see if there's anything in the
+        compiler-generated version that differs from our own.
+      </Paragraph>
+      <Paragraph>
+        The second problem can be eliminated by using the dedicated timer hardware present on the microcontroller.
+      </Paragraph>
+      <Paragraph>
+        The third problem can be eliminated by using the
+        <LinkExternal target="https://en.wikipedia.org/wiki/Universal_asynchronous_receiver-transmitter">USART
+        </LinkExternal>
+        hardware included on the microcontroller to provide output that can be observed using a serial console.
+      </Paragraph>
+      <Paragraph>
+        We'll fix each problem one at a time, yielding a final program that has accurate timing and produces debugging
+        output.
+      </Paragraph>
+    </Subsection>
+
+    <Subsection title="Blinking In C"
+                id="fe410f03-a53d-49ca-8b1c-4e6ef55c5ec4">
+      <Paragraph>
+        Rewriting our original <Link target="b44e2478-6d26-4ed1-bcd4-1230c9d88731">pause</Link> function in C is
+        trivial, as we actually specified it in C
+        <Link target="d1904e30-d30e-44b0-8a46-6e528e341451">originally</Link>
+        and then wrote the assembler version. However, rewriting the code that actually
+        <Link target="16a9ae21-d6e9-4cb5-abd4-e0a2d6345071">toggles the LED</Link>
+        is somewhat more difficult, because we don't have direct access to the <Term type="instruction">out</Term> instruction
+        required to write to addresses in I/O space.
+      </Paragraph>
+      <Paragraph>
+        Thankfully, there's a solution to this. Page 30 of the datasheet has this to say:
+      </Paragraph>
+      <Paragraph type="quote">
+        "When using the I/O specific commands IN and OUT, the I/O addresses 0x00 - 0x3F must be used. When addressing
+        I/O Registers as data space using LD and ST instructions, 0x20 must be added to these addresses."
+      </Paragraph>
+      <Paragraph>
+        What the data sheet is implicitly stating is that the registers in I/O space are also accessible in data space
+        at addresses 32 bytes higher. This can be observed directly if we turn once again to the
+        <Link target="f2a6b651-b376-4185-a0d9-4da2a4e876a9">register summary</Link>
+        on page 624, we can see that, for example the address of <Term type="register">PORTB</Term> is
+        <Term type="constant">io@0x05</Term>
+        and <Term type="constant">data@0x25</Term>. This means that we can actually access these registers using <Term type="expression">
+        volatile uint8_t
+      </Term> pointers in C. The pointers <Term type="emphasis">must</Term> be <Term type="expression">volatile</Term> because
+        reading or writing to the target addresses produces I/O effects and the compiler must not be allowed to omit or
+        reorder those operations for the purposes of optimization.
+      </Paragraph>
+      <Paragraph>
+        Given all of this information, we can trivially rewrite the Blink program in C to be behaviour-compatible with
+        the assembler version:
+      </Paragraph>
+      <FormalItem title="Blink In C Poorly"
+                  id="33a35ca1-a8cb-458d-bacf-c78102fd01c7">
+        <Verbatim>
+          <xi:include href="blinkBad.c"
+                      parse="text"/>
+        </Verbatim>
+      </FormalItem>
+      <Paragraph>
+        Assuming that we placed the code into a file called <Term type="file">blinkBad.c</Term>, we can compile the
+        program with minimal optimization:
+      </Paragraph>
+      <FormalItem title="Blink In C Poorly"
+                  id="3ad9cb57-3d42-4085-84a7-23ac20e3ea9e">
+        <Verbatim><![CDATA[
+$ avr-gcc -Os -mmcu=atmega328p -o blinkBad blinkBad.c
+$ avr-objcopy -j .text -j .data -O ihex blinkBad blinkBad.hex
+]]></Verbatim>
+      </FormalItem>
+      <Paragraph>
+        We can use the <Term type="command">avr-objdump</Term> tool to disassemble the executable and view the resulting
+        machine code:
+      </Paragraph>
+      <FormalItem title="Blink In C Object Code"
+                  id="0927bee4-d9a6-497a-a688-d8c61d02ec98">
+        <Verbatim>
+          <xi:include href="blinkBad.txt"
+                      parse="text"/>
+        </Verbatim>
+      </FormalItem>
+      <Paragraph>
+        A number of similarities and differences stand out. Firstly, our original
+        <Link target="85476ce8-38d7-4b82-8ad8-7189c914d6f1">__avr_interrupt_vectors</Link>
+        table is replaced with a compiler-generated version called <Term type="function">__vectors</Term> which performs
+        largely the same tasks. Our <Link target="7939f090-33e7-47b8-b087-44cffdd0d862">__avr_setup</Link> function is
+        replaced with a compiler-generated version called <Term type="function">__ctors_end</Term> that performs the
+        exact same tasks including clearing the status register and setting up the stack pointer. The execution of the <Term type="function">
+        __ctors_end
+      </Term> function leads directly to a function called <Term type="function">__do_copy_data</Term> that does not
+        correspond to anything we originally wrote in the assembler version of Blink. The purpose of this function is to
+        actually to support programming in C. Note that we <Link target="76cdd37a-4b48-4fb5-a592-b3a825bd620d">mentioned
+        previously
+      </Link> that AVR uses multiple addresses spaces for code and data, whilst C programmers are accustomed to working
+        in a single address space on typical hardware architectures. The
+        <Term type="function">__do_copy_data</Term>
+        function exists to copy data from the code space into the data space in order to initialize the values of any
+        variables defined in C. Without going into too much detail, the code uses the
+        <Term type="instruction">lpm</Term>
+        instruction to copy a region of memory from code space into locations in data space. The compiler's linker
+        defines two symbols
+        <Term type="function">__data_start</Term>
+        and <Term type="function">__data_end</Term> that define the start and end addresses of the data in code space,
+        and the addresses of these symbols are inlined into the generated code of
+        <Term type="function">__do_copy_data</Term>
+        and used to perform the copying operation. Given that there is very little to be learned by writing this code by
+        hand, and given that it only exists to support programming in C on the microcontroller, we're satisfied with
+        allowing the compiler to generate it.
+      </Paragraph>
+      <Paragraph>
+        Once the <Term type="function">__do_copy_data</Term> function has completed, it performs an unconditional jump
+        to our <Term type="function">main</Term> function. The object code generated for
+        <Term type="function">main</Term>
+        is surprisingly almost identical to our assembler code. The reason that this is surprising is that we explicitly
+        decided to write to
+        <Term type="register">PORTB</Term>
+        and <Term type="register">DDRB</Term> using addresses in data space, but the compiler was intelligent enough to
+        translate this code to executing <Term type="instruction">out</Term> instructions on addresses in I/O space!
+      </Paragraph>
+      <Paragraph>
+        The <Term type="function">__do_copy_data</Term> also includes a jump to a generated
+        <Term type="function">_exit</Term>
+        function that turns off all interrupts and then continues to a function called <Term type="function">
+        __stop_program
+      </Term> that simply loops forever and does nothing. The purpose of these two functions is to "halt" the
+        microcontroller should the <Term type="function">main</Term> function ever return.
+      </Paragraph>
+      <Paragraph>
+        Lastly, the code generated for the <Term type="function">pause</Term> function was the largest difference. The
+        code is similar, but has been reorganized to execute the same algorithm but with more in the way of stack
+        manipulation, and with use of the ability to treat certain pairs of 8-bit registers as single 16-bit registers.
+        The differences here are only of interest to assembler programmers, and we won't bother to discuss them any
+        further.
+      </Paragraph>
+      <Paragraph>
+        Flashing the resulting <Term type="file">blinkBad.hex</Term> file to the microcontroller with
+        <Term type="command">avrdude</Term>
+        will result in an LED that blinks in the same manner as the assembler version, except that it will almost
+        certainly blink slightly more slowly due to the generated
+        <Term type="function">pause</Term>
+        function implementation wasting more time than the pure assembler version.
+      </Paragraph>
+      <Paragraph>
+        The next step will be to use a hardware timer to precisely control the LED blink periods.
+      </Paragraph>
+    </Subsection>
+
+    <Subsection title="Blinking In C Precisely"
+                id="075f9dce-416b-4a46-aa58-b5e5abd7a922">
+      <Paragraph>
+        On page 120 of the datasheet, we can see that the ATMega328p comes equipped with a 16-bit timer unit. The timer
+        unit can act as a <Term type="counter">counter</Term> that ticks at a rate we specify, and we can choose to act
+        when the counter reaches whatever tick count we require. We'll use this timer to count out a period of one
+        second so that we can turn the LED on and off at a rate that is independent of the CPU clock speed.
+      </Paragraph>
+      <Paragraph>
+        The first part of configuring the timer on the microcontroller is determining the
+        <Term type="term">clock prescaler value</Term>. The way the timer on the ATMega328p works is that it will tick
+        at a rate that is some division of the system clock. The datasheet refers to this
+        as <Link target="9b7c03fa-1791-4e6e-8ff1-0f565d2c4e2c">CLKi/o</Link>. If the clock prescaler value is set to
+        <Term type="constant">1</Term>, then the clock will tick at a rate of
+        <Term type="expression">16mhz = 16000000hz / 1 = 16000000hz</Term>. If the clock prescaler value is set
+        to <Term type="constant">8</Term>, then the clock will tick at a rate of
+        <Term type="expression">16000000hz / 8 = 8000000hz = 8mhz</Term>. If the clock prescaler value is set to <Term type="constant">
+        1024
+      </Term> then the clock will tick at a rate of
+        <Term type="expression">16000000hz / 1024 = 15625hz = 15.625khz</Term>. The prescaler value can only be set
+        to <Term type="constant">1</Term>, <Term type="constant">8</Term>, <Term type="constant">64</Term>,
+        <Term type="constant">256</Term>, or <Term type="constant">1024</Term>. Why would we pick one prescaler value
+        over another? The timer, as mentioned, is a 16-bit counter. Therefore it can only count
+        <Term type="constant">65535</Term>
+        ticks before it overflows. At <Term type="constant">16mhz</Term>,
+        <Term type="expression">65535 / 16000000 ≈ 0.0040959375</Term>, meaning that we'd be able to count out
+        approximately <Term type="constant">4ms</Term> before the timer overflowed. However, with the prescaler set
+        at <Term type="constant">1024</Term>, we get
+        <Term type="expression">65535 / (16000000 / 1024) ≈ 4.19424</Term>. This means that we could count out
+        approximately four seconds before the timer overflowed. Larger prescaler values, however, make the clock less
+        precise. A <Term type="constant">16mhz</Term> clock with no prescaling effectively counts individual periods of <Term type="expression">
+        1 / 16000000 ≈ 0.0000000625
+      </Term> seconds or
+        <Term type="expression">62.5</Term>
+        nanoseconds. A <Term type="constant">16mhz</Term> clock with a prescaler of
+        <Term type="constant">1024</Term>, however, effectively counts individual periods of
+        <Term type="expression">1 / (16000000 / 1024) ≈ 0.000064</Term>
+        seconds or
+        <Term type="expression">64</Term>
+        microseconds. We trade the ability to measure smaller slices of time, for the ability to measure longer overall
+        periods before the timer overflows. Given that our blink program works in periods of one second, and that we
+        don't care about millisecond precision, we can safely use a prescaler value of <Term type="constant">1024</Term>.
+        The prescaler value is specified using the lowest 3 bits of the <Term type="register">TCCR1B</Term> register as
+        described on pages 142 and 143. We want to use a value of <Term type="constant">0b101</Term> to select a
+        <Term type="constant">1024</Term>
+        prescaler. All of the other bits in the register can be left at <Term type="constant">0</Term>.
+      </Paragraph>
+      <Paragraph>
+        The second part of configuring the timer simply involves initializing the counter to a known initial value. On
+        page 143 of the datasheet, the 16-bit timer value is exposed using a pair of 8-bit registers
+        <Term type="register">TCNT1H</Term>
+        and <Term type="register">TCNT1L</Term>, containing the high and low 8 bits of the 16-bit counter, respectively.
+        We can simply initialize these to
+        <Term type="constant">0</Term>
+        every time we want to start counting, but the datasheet does specify on page 122 that:
+      </Paragraph>
+      <FormalItem title="16-bit Register Access"
+                  id="266e8ec9-0f67-474d-9931-d5fe364f7d96">
+        <ListUnordered>
+          <Item>When writing to a 16-bit register, we must write the high byte followed by the low byte.</Item>
+          <Item>When reading from a 16-bit register, we must read the low byte followed by the high byte.</Item>
+        </ListUnordered>
+      </FormalItem>
+      <Paragraph>
+        As long as we take care to get the order of operations right, there won't be any problems.
+      </Paragraph>
+      <Paragraph>
+        Turning once again to the register summary on page 622, we can see that the
+        <Term type="register">TCCR1B</Term>
+        register is an 8-bit register at <Term type="constant">data@0x0081</Term>,
+        <Term type="register">TCNT1H</Term>
+        is an 8-bit register at
+        <Term type="constant">data@0x0085</Term>, and  <Term type="register">TCNT1L</Term> is an 8-bit register
+        at <Term type="constant">data@0x0084</Term>. We can therefore use the rather unsurprising declarations in C to
+        access them:
+      </Paragraph>
+      <FormalItem title="Timer Registers"
+                  id="166230dd-af64-4fd6-b250-91cad830866e">
+        <Verbatim><![CDATA[
+volatile uint8_t * const TCCR1B = (volatile uint8_t *) 0x0081;
+volatile uint8_t * const TCNT1L = (volatile uint8_t *) 0x0084;
+volatile uint8_t * const TCNT1H = (volatile uint8_t *) 0x0085;
+]]></Verbatim>
+      </FormalItem>
+      <Paragraph>
+        We can select a prescaler and initialize the counter with the following equally unsurprising statements:
+      </Paragraph>
+      <FormalItem title="Timer Register Configuration"
+                  id="7c8d9d71-8243-4e0e-8d75-a0106f0bcaf3">
+        <Verbatim><![CDATA[
+  // Select a /1024 prescaler.
+  *TCCR1B = 0b00000101;
+  *TCNT1H = 0;
+  *TCNT1L = 0;
+]]></Verbatim>
+      </FormalItem>
+      <Paragraph>
+        Note that we're careful to write the high byte of the counter first, followed by the low byte of the counter.
+      </Paragraph>
+      <Paragraph>
+        Now, we simply need to sit in a loop, checking the counter on every iteration to see if the desired number of
+        ticks has elapsed. How many ticks do we need to count out one second? Remember that with a
+        <Term type="constant">1024</Term>
+        prescaler at <Term type="constant">16000000hz</Term>,
+        <Term type="expression">1 / (16000000 / 1024) ≈ 0.000064</Term>
+        seconds, so we need
+        <Term type="expression">1 / 0.000064 = 15625</Term>
+        ticks to make one second. Writing the
+        <Term type="function">pause</Term>
+        function is now straightforward, and we can fill in the entirety of the improved Blink program.
+      </Paragraph>
+      <FormalItem title="Blink Better"
+                  id="d8b4ab74-716b-4552-9d7c-a3c1babbd4b8">
+        <Verbatim>
+          <xi:include href="blinkBetter.c"
+                      parse="text"/>
+        </Verbatim>
+      </FormalItem>
+      <Paragraph>
+        An even better version of this program would define a function that takes the microcontroller speed in hz, and
+        the prescaler value, and returns the number of ticks required for one second. This function would be called at
+        run-time rather than hardcoding a value of <Term type="constant">15625</Term> ticks. This is left as an exercise
+        for the reader!
+      </Paragraph>
+    </Subsection>
+
+    <Subsection title="Connecting A Serial Device"
+                id="0dec44ce-605c-4210-94b7-b806ac83c21c">
+      <Paragraph>
+        The last part of the improved Blink program will be to produce output from the program that can be observed on a
+        serial console. This will require both hardware and software components to achieve.
+      </Paragraph>
+      <Paragraph>
+        The ATMega328p has dedicated hardware for sending and receiving data using the
+        <LinkExternal target="https://en.wikipedia.org/wiki/Universal_asynchronous_receiver-transmitter">USART
+        </LinkExternal>
+        protocol. Additionally, there are extremely inexpensive USB ↔ USART adapters available. The adapter specified in
+        the <Link target="e376161d-eefd-4933-99aa-c762394a2c7b">bill of materials</Link> is the
+        FTDI <LinkExternal target="https://ftdichip.com/products/lc234x/">LC234X</LinkExternal>, and is actually sold as
+        a development board in order to demonstrate the capabilities of the onboard
+        <LinkExternal target="https://ftdichip.com/products/ft234xd/">FT234XD</LinkExternal>
+        IC. Any USB ↔ USART adapter will work, but you'll need to adapt the instructions here slightly when it comes to
+        actually physically connecting the device. The approach we're going to take is to have the ATMega328p print
+        messages over a USART connection, and use a USB ↔ USART adapter to allow an ordinary Linux/BSD workstation to
+        access the adapter as a serial console. We can actually use this connection to both send and receive data to and
+        from the microcontroller, but we'll only use it in a receiving capacity on the workstation side for this book.
+      </Paragraph>
+      <FormalItem title="LC234X"
+                  id="0204f865-1a08-46a2-a11b-a56aa9546bf2">
+        <Image source="LC234X.jpg"
+               width="640"
+               height="482">LC234X
+        </Image>
+      </FormalItem>
+      <Paragraph>
+        As usual, we're faced with the problem of working which pins must be connected. Consulting the
+        <Link target="aceaf082-70f9-4e36-bb82-120674524895">pin diagram</Link>
+        for the ATMega328p shows that pin 2 is the <Term type="pin">RXD</Term> pin for the USART, and pin 3 is the
+        <Term type="pin">TXD</Term>. The terms <Term type="pin">RXD</Term> and
+        <Term type="pin">TXD</Term>
+        were found by reading the section of the datasheet on the USART on page 179. The USART protocol actually
+        dictates that the <Term type="pin">RXD</Term> pin on the sending device must be connected to the <Term type="pin">
+        TXD
+      </Term> pin on the receiver, and vice versa.
+      </Paragraph>
+      <FormalItem title="USART"
+                  id="28c0dc03-860a-4db4-885a-35542016435b">
+        <Image source="usart.png">USART</Image>
+      </FormalItem>
+      <Paragraph>
+        Given this information, connecting the device to the breadboard is straightforward.
+      </Paragraph>
+      <FormalItem title="Connections"
+                  id="234042a5-372c-4e86-a260-e1cc8471ae4d">
+        <ListOrdered>
+          <Item>Connect the <Term type="pin">TXD</Term> pin on the LC234X to pin 2 on the ATMega328p.
+          </Item>
+          <Item>Connect the <Term type="pin">RXD</Term> pin on the LC234X to pin 3 on the ATMega328p.
+          </Item>
+        </ListOrdered>
+      </FormalItem>
+      <FormalItem title="Board Serial 0"
+                  id="43a94f39-efc4-4216-a4e4-857f408de9de">
+        <Image source="boardSerial0.jpg"
+               width="640"
+               height="404">Board Serial 0
+        </Image>
+      </FormalItem>
+      <FormalItem title="Board Serial 1"
+                  id="15bbed83-1d1e-4f9e-84fa-a5a76605cf01">
+        <Image source="boardSerial1.jpg"
+               width="640"
+               height="468">Board Serial 1
+        </Image>
+      </FormalItem>
+      <Paragraph>
+        Note that two pairs of green and yellow wires have been used for the
+        <Term type="pin">RXD</Term>
+        and <Term type="pin">TXD</Term> pins. This was simply to make the board connections easier to see in the
+        photograph.
+      </Paragraph>
+    </Subsection>
+
+    <Subsection title="Speaking USART"
+                id="0a34e8ff-e1f5-4517-9c41-ef8299dec4d8">
+      <Paragraph>
+        It's now necessary to configure the USART on the microcontroller, and start printing messages to the serial
+        console. In order to do this, we need to make some decisions as to the parameters we're going to use for serial
+        communication, and then work out which registers we need to use in order to actually configure the hardware.
+      </Paragraph>
+      <Paragraph>
+        The first parameter we need to decide upon is the transfer speed that will be used. This is known
+        <LinkExternal target="https://en.wikipedia.org/wiki/Baud">baud rate</LinkExternal>, and is expressed in bits per
+        second. A baud rate of <Term type="constant">9600</Term> has been a common convention for low power serial
+        devices for many years, and is sufficient for our needs.
+      </Paragraph>
+      <Paragraph>
+        The next parameter we need to decide upon is the size of a single character in bits. There is very little reason
+        to use anything other than <Term type="constant">8</Term> bits per character, as we can match these to the <Term type="constant">
+        8
+      </Term> bit bytes used on almost all existing computer hardware.
+      </Paragraph>
+      <Paragraph>
+        The next parameter we need to decide upon is whether we'll include parity bits in the stream.
+        <LinkExternal target="https://en.wikipedia.org/wiki/Parity_bit">Parity bits</LinkExternal>
+        are an error detection mechanism that can detect transmission errors due to noise and interference. For
+        simplicity, we won't use parity bits.
+      </Paragraph>
+      <Paragraph>
+        Reading the datasheet section on the USART registers, on page 200, shows us that there are three 8-bit control
+        registers (<Term type="register">UCSRnA</Term>, <Term type="register">UCSRnB</Term> and
+        <Term type="register">UCSRnC</Term>), one 16-bit register to specify the baud rate (<Term type="register">
+        UBRRn</Term>), and a 16-bit register for sending and receiving data (<Term type="register">UDRn</Term>). The
+        datasheet is written in a style where the register names include a lowercase
+        <Term type="expression">n</Term>
+        that denotes the <Term type="expression">nth</Term> instance of the register in question on the microcontroller.
+        The larger microcontrollers have multiple USART devices, and so you will see
+        <Term type="register">UCSR0A</Term>, <Term type="register">UCSR1A</Term>, <Term type="register">UCSR2A</Term>,
+        and so on. On the ATMega328P, however, we only have on USART device, so the only registers we will see are
+        numbered at <Term type="constant">0</Term>.
+      </Paragraph>
+      <Paragraph>
+        Jumping ahead to the register summary on page 621, we can immediately extract the following C definitions in the
+        same manner as we did for the
+        <Link target="33a35ca1-a8cb-458d-bacf-c78102fd01c7">I/O ports</Link>
+        and <Link target="166230dd-af64-4fd6-b250-91cad830866e">timer registers</Link>:
+      </Paragraph>
+      <FormalItem title="USART Registers"
+                  id="7b20ae53-bf99-4c48-9fe1-3831297cf0b2">
+        <Verbatim><![CDATA[
+volatile uint8_t * const UCSR0A = (volatile uint8_t *) 0x00c0;
+volatile uint8_t * const UCSR0B = (volatile uint8_t *) 0x00c1;
+volatile uint8_t * const UCSR0C = (volatile uint8_t *) 0x00c2;
+volatile uint8_t * const UBRR0L = (volatile uint8_t *) 0x00c4;
+volatile uint8_t * const UBRR0H = (volatile uint8_t *) 0x00c5;
+volatile uint8_t * const UDR0 = (volatile uint8_t *) 0x00c6;
+]]></Verbatim>
+      </FormalItem>
+      <Paragraph>
+        Inspecting the datasheet for the <Term type="register">UCSR0A</Term> register shows us that we don't need to
+        touch the register for the initial setup, but we will need to use it during transmission. For example, we're
+        required to check the <Term type="bit">UDRE0</Term> bit (bit <Term type="bit">5</Term>) before we attempt to
+        send any data.
+      </Paragraph>
+      <Paragraph>
+        Looking at the datasheet for the <Term type="register">UCSR0B</Term> register indicates that we will need to set
+        several of the bits in order to configure the transmission parameters we decided upon, so let's do that first.
+        Firstly, we need to enable the transmitter by setting bit
+        <Term type="bit">TXEN0</Term>
+        (bit <Term type="bit">3</Term>) to <Term type="constant">1</Term>. In order to select 8-bit characters, we need
+        to set bits in both the <Term type="register">UCSR0B</Term> and
+        <Term type="register">UCSR0C</Term>
+        registers:
+      </Paragraph>
+      <FormalItem title="USART Character Bits"
+                  id="c17f3b62-db7d-48c2-84e0-f6680c562924">
+        <Image source="bits.png"
+               width="640"
+               height="269">USART Character Bits
+        </Image>
+      </FormalItem>
+      <Paragraph>
+        We also need to calculate the value that will be placed into the
+        <Term type="register">UBRR0</Term>
+        register in order to set the baud rate. The table on page 182 gives the equations that describe how to get from
+        a baud rate in bits per second, to a value suitable to be inserted into the
+        <Term type="register">UBRR0</Term>
+        register:
+      </Paragraph>
+      <FormalItem title="USART Baud Equations"
+                  id="c72ab6b4-b391-4200-92de-10e1caa1510d">
+        <Image source="baud.png"
+               width="640"
+               height="616">USART Baud Equations
+        </Image>
+      </FormalItem>
+      <Paragraph>
+        We can encapsulate this definition in a function:
+      </Paragraph>
+      <FormalItem title="Baud Calculation"
+                  id="6f2a8bd4-7d7a-4e54-8f5b-103968ef6d96">
+        <Verbatim><![CDATA[
+static uint16_t
+usart_ubrr(uint32_t cpu_clock_hz, uint32_t baud) {
+  return (cpu_clock_hz / (16 * baud)) - 1;
+}
+]]></Verbatim>
+      </FormalItem>
+      <Paragraph>
+        Evaluating <Term type="expression">usart_ubrr(16000000, 9600)</Term> yields <Term type="constant">103</Term>,
+        which matches the value in the table on page 199. We can now put together all of the initialization code:
+      </Paragraph>
+      <FormalItem title="USART Init"
+                  id="720c743a-d726-44d9-bb1b-191c0b56caf8">
+        <Verbatim><![CDATA[
+static const uint8_t TXEN_BIT = 0b00001000;
+static const uint8_t UCSZn0_BIT = 0b00000010;
+static const uint8_t UCSZn1_BIT = 0b00000100;
+
+void
+usart_init(uint32_t baud)
+{
+  /*
+   * Configure the baud rate based on a 16mhz clock.
+   */
+
+  const uint16_t ubrr = usart_ubrr(16000000, baud);
+  *UBRR0H = (ubrr >> 8);
+  *UBRR0L = ubrr & 0xff;
+
+  /*
+   * Enable the sender.
+   */
+
+  *UCSR0B = TXEN_BIT;
+
+  /*
+   * Specify 8-bit bytes.
+   */
+
+  *UCSR0C = UCSZn0_BIT | UCSZn1_BIT;
+}
+]]></Verbatim>
+      </FormalItem>
+      <Paragraph>
+        The process for sending a single character over the USART interface is fairly simple. We wait for the
+        <Term type="bit">UDRE0</Term>
+        bit in the <Term type="register">UCSRA0</Term> register to become set to
+        <Term type="constant">0</Term>
+        by the underlying hardware, and then we place the character we want transmitted into the <Term type="register">
+        UDR0
+      </Term> register. This can be encapsulated into a function, and we can add another function that allows for
+        sending entire strings:
+      </Paragraph>
+      <FormalItem title="USART Transmission"
+                  id="058702ec-d0b8-4a35-b3e5-8368c90492c9">
+        <Verbatim><![CDATA[
+static const uint8_t UDREn_BIT = 0b00100000;
+
+void usart_put_char(uint8_t data) {
+
+  /*
+   * Wait for the transmission buffer to become empty.
+   */
+
+  while ((*UCSR0A & UDREn_BIT) == 0)
+    ;
+
+  *UDR0 = data;
+}
+
+void usart_put_string(const char *str)
+{
+  const char *ptr = text;
+  for (;;) {
+    if (*ptr == 0) {
+      break;
+    }
+    usart_put_char(*ptr);
+    ++ptr;
+  }
+}
+]]></Verbatim>
+      </FormalItem>
+      <Paragraph>
+        With these changes made, we can now update our Blink program to send messages on startup and each time the LED
+        is turned on and off.
+      </Paragraph>
+      <FormalItem title="Blink USART"
+                  id="fd822678-5312-4345-ac45-e198a607b38d">
+        <Verbatim>
+          <xi:include href="blinkUART.c"
+                      parse="text"/>
+        </Verbatim>
+      </FormalItem>
+      <Paragraph>
+        When the LC234X is connected to a Linux workstation, the operating system will typically create a <Term type="file">
+        tty
+      </Term> device with a name similar to <Term type="file">/dev/ttyUSB0</Term>. It's possible to use any serial
+        console application to observe data being sent over the LC234X connection. One such application is
+        <LinkExternal target="https://sourceforge.net/projects/moserial/">moserial</LinkExternal>, shown here receiving
+        data from the serial connection:
+      </Paragraph>
+      <FormalItem title="Serial Configuration"
+                  id="2689c88e-74bb-4a5b-a296-17f011fc0d4b">
+        <Image source="serial1.png"
+               width="640"
+               height="495">Serial Configuration
+        </Image>
+      </FormalItem>
+      <FormalItem title="Serial Data"
+                  id="a9abd8c7-0e40-453a-8a50-809d23ac1072">
+        <Image source="serial0.png"
+               width="640"
+               height="495">Serial Data
+        </Image>
+      </FormalItem>
+    </Subsection>
+  </Section>
+
+  <xi:include href="credits.xml"/>
+
+</Document>
