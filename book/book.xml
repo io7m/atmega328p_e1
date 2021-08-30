@@ -1102,7 +1102,7 @@ __avr_setup:
       <Paragraph>
         We can see that <Term type="register">DDRB</Term> is at
         <Term type="constant">io@0x04</Term>
-        and
+        and <Term type="register">PORTB</Term> is at
         <Term type="constant">io@0x05</Term>
         <LinkFootnote target="db20346b-43ab-4852-b6a6-c8779b4f866f"/>. All of this amounts to the following assembler
         instructions:
