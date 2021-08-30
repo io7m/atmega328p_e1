@@ -927,7 +927,7 @@ __avr_unexpected_interrupt:
       </FormalItem>
       <Paragraph>
         The AVR <Term type="term">status register</Term> (referred to as <Term type="register">SREG</Term> in the
-        datasheet) is a register that enabled and disables interrupts, and provides information about the most recently
+        datasheet) is a register that enables and disables interrupts, and provides information about the most recently
         executed arithmetic operation such as indicating overflows, carries, and so on. The status register should be
         manually cleared on startup in order to ensure that the microcontroller has a clean slate with regards to
         execution state. The status register is accessible at address
